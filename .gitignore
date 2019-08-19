@@ -1,0 +1,10 @@
+__pycache__
+.ipynb_checkpoints
+*.pdb1
+*.pdb
+*.png
+*.dssp
+*.socket
+*.p
+*.pse
+SamCC-refactor-dev.ipynb
