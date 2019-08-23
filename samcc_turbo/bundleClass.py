@@ -138,6 +138,17 @@ class bundleClass():
 
 			deffile: name of the definition file.
 
+		Example input:
+
+			deffile:
+
+			/path/to/pdb/file/file.pdb
+			A,11,29,a
+			A,60,42,c
+			A,106,88,f
+			A,117,135,e
+
+
 		"""
 		f=deffile
 

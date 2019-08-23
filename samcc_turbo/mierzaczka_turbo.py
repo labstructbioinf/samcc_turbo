@@ -17,62 +17,83 @@
 ### end old imports
 
 
-### Exceptions
-
-class NoResidue(Exception):
-    pass
-
-class TooShort(Exception):
-    pass
 
 
 ### DEV
-from . import wrappers, socket_parser, socketClass
+from . import wrappers, socket_parser, socketClass, helper_functions
 import importlib
 importlib.reload(wrappers)
 importlib.reload(socket_parser)
 importlib.reload(socketClass)
+importlib.reload(helper_functions)
+
 ### END-DEV
 
 import pickle
+import sys
 from .wrappers import run_dssp
 from .wrappers import run_socket
 from .socket_parser import parse_socket_output
 from .socketClass import socket_class
 
 
-def run_samcc_turbo(pdbpath):
-	"""Main function for running samcc-turbo."""
+def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, plot=True,
+					save_df=True, bin_paths={'dssp':'dssp', 'socket':'socket'}):
+	"""Main function for running samcc-turbo.
+
+	Arguments:
+	pdbpath   -- path to pdb file
+	mode      -- mode of running SamCC (default 'auto-detect')
+	           - auto-detect: automatic detection of layers in the bundle (requires
+	                          installed dssp and Socket)
+	           - deffile: use layer definition from file
+	deffile   -- path to file defining layers used in deffile mode (default False)
+	plot      -- plot results and also save plot to file (default True)
+	save_df   -- save result DataFrame to pickle (default True)
+	bin_paths -- dictionary of paths to binaries of dssp and socket
+	             (default {'dssp': 'dssp', 'socket':'socket'})
+	"""
 
 	###DEV-TXT: minimalne użycie: mierzaczka(pdb) odpala dssp, socket, parsuje socket, mierzy, zwraca df, wykres i sesje pymol
-	###DEV-TXT: wersja 0.2: kontrola parametrów: czy wykres, df, pymol, ścieżki, zmienne coilowe (np. calc_crickdev)
+	###DEV-TXT: wersja 0.1A: użycie pliku definiującego helisy (stare samcc)
+	###DEV-TXT: wersja 0.2: kontrola parametrów: czy wykres, df, pymol, ścieżki
 
 	# get pdbid
 	pdbid = pdbpath.split('/')[-1].split('.')[0]
 
 	# run dssp
-	dssppath = run_dssp(pdbpath)
+	dssppath = run_dssp(pdbpath, bin_paths['dssp'])
 
-	# run socket
-	socket_binpath = '/home/kszczepaniak/Apps/socket3.03/socket'
-	socketpath     = run_socket(pdbpath, dssppath, socket_binpath)
-	socket_data    = parse_socket_output(socketpath)
+	if mode == 'auto-detect':
+		# run socket ('auto-detect' mode)
+		socketpath     = run_socket(pdbpath, dssppath, bin_paths['socket'])
+		socket_data    = parse_socket_output(socketpath)
+		s 			   = socket_class(socket_data, pdbpath)
 
-	s = socket_class(socket_data, pdbpath)
-	bundles = s.get_bundles(mode='ks', res_num_layer_detection=5)
+	elif mode == 'deffile':
+		if deffile == None:
+			print('Please provide file with bundle definition for measurement.')
+			sys.exit(-1)
+		s = socket_class(deffile, pdbpath)
 
-	for b in enumerate(bundles):
-		b[1].calc_bundleaxis()
-		b[1].calc_periodicity()
-		b[1].calc_radius()
-		b[1].calc_crick()
-		b[1].calc_crickdev(3.5, 7, optimal_ph1=19.5)
-		b[1].calc_axialshift()
-		b[1].plot(pdbid + '.png', elements=['Periodicity', 'Radius', 'CrickDev', 'Shift'])
+	else:
+		#FIXME add behaviour for unknown mode
+		print('Unknown mode')
 
-		#print(b[1].gendf())
+	bundles = s.get_bundles(mode=mode, res_num_layer_detection=5)
 
-		pickle.dump(b[1].gendf(), open(pdbpath.split('.')[0] + '_coil_' + str(b[0]) + '.p', 'wb'))
+	for bid, bundle in enumerate(bundles):
+		bundle.calc_bundleaxis()
+		bundle.calc_periodicity()
+		bundle.calc_radius()
+		bundle.calc_crick()
+		bundle.calc_crickdev(3.5, 7, optimal_ph1=19.5)
+		bundle.calc_axialshift()
+		if plot: # make plot and save it to file
+			bundle.plot(pdbid + '.png', elements=['Periodicity', 'Radius', 'CrickDev', 'Shift'])
 
-		b[1].pymol_plot_layer(filename=pdbpath ,savepath='/'.join(pdbpath.split('/')[:-1]), suffix='coil_' + str(b[0]),
-								pymol_version=2.0, color_selection=True, helix_order=b[1].helix_order)
+		if save_df: # dump pickle with dataframe of measured values
+			pickle.dump(bundle.gendf(), open(pdbpath.split('.')[0] + '_coil_' + str(bid) + '.p', 'wb'))
+
+		bundle.pymol_plot_layer(filename=pdbpath ,savepath='/'.join(pdbpath.split('/')[:-1]), suffix='coil_' + str(bid),
+								pymol_version=2.0, color_selection=True, helix_order=bundle.helix_order)

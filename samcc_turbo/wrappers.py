@@ -2,11 +2,11 @@
 
 import subprocess
 
-def run_dssp(pdbpath):
+def run_dssp(pdbpath, dssp_binpath):
 	"""Run DSSP software"""
 	#FIXME expand
 
-	subprocess.call('dssp -i ' + pdbpath + ' -o ' + pdbpath.split('.')[0] + '.dssp', shell=True)
+	subprocess.call(dssp_binpath + ' -i ' + pdbpath + ' -o ' + pdbpath.split('.')[0] + '.dssp', shell=True)
 
 	return pdbpath.split('.')[0] + '.dssp'
 
