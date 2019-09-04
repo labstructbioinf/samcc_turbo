@@ -4,7 +4,12 @@ import seaborn as sns
 import itertools
 import pandas as pd
 
+from . import layerClass, residueClass, chainClass
 from .pymol_draw_layers import save_layers_to_pymol
+from Bio.PDB import PDBParser
+from .layerClass import layerClass
+from .residueClass import residueClass
+from .chainClass import chainClass
 
 class bundleClass():
 	"""

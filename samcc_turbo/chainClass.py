@@ -29,20 +29,25 @@ class chainClass():
 		return s
 
 	def get_CA(self):
-		#FIXME add docs
+		"""Returns a list of helices. Each helix is a list of CA atoms.
+		Each CA atom is represented as 3-dimensional Biopython Vector object.
+		"""
 
 		return [r.Ca for r in self.res]
 
-	def calc_axis(self, smooth=True):
-		#FIXME add docs
+	def calc_axis(self, smooth=False):
+		#FIXME add docs, explain smooth parameter, clean dev
 
 		temp_axis = get_local_axis([i.Ca for i in self.res])
+		# print('len residues', len(self.res)) [DEV]
+		# print('temp axis', len(temp_axis)) [DEV]
 
 		if smooth:
 			self.axis = [temp_axis[0]] + [np.sum(w[0]+Vector(w[1]._ar*2)+w[2])**(1.0/4) for w in window(temp_axis, n=3)] + [temp_axis[-1]]
 		else:
 			self.axis = temp_axis
 
+		# None values at edges to assure equal length of parameters tables
 		self.axis = [None] + self.axis + [None]
 
 		for pos, ax in enumerate(self.axis):

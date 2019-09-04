@@ -510,6 +510,7 @@ def find_bundle_boundry_layer_universal(helices_pts, neighbour_interactions, dis
 def find_closest_CA_to_point(layer_pts, helices_CA):
 
 	#FIXME format docstring
+	#FIXME this should relate point on axis to residue that this point was calculated from
 
 	''' find CA closest to the point on helix axis '''
 	''' input: (layer_pts) list of helices, each represented as 3-element list of coords of point on their axis '''
