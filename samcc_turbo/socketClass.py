@@ -465,7 +465,8 @@ class socket_class():
 				### end search again
 				### END-DEVEL
 
-				CA_layers                         = [CA_first_layer, CA_last_layer, CA_middle_layer]
+				#FIXME does not seem to be used - examine and delete if not needed
+				# CA_layers                         = [CA_first_layer, CA_last_layer, CA_middle_layer]
 
 				# find all layers starting from all found points
 				CA_layers_from_first   = find_all_layers_from_layer(first_layer_ids, helices_CA)
@@ -477,6 +478,7 @@ class socket_class():
 				layer_ids_all                  = [(first_layer_ids,'both'), (last_layer_ids, 'both'), (middle_layer_ids, 'both')]
 
 				#FIXME implement new method for dimers
+				#FIXME cast helices onto plane and measure angle between points on first helix and corresponding points on second helix
 				# case of dimers (only 2 helices)
 				if len(CA_layers_from_first[0]) == 2:
 					best_layer_set, best_layer_ids = select_minimal_distance_layer_set(CA_layers_all, layer_ids_all)
@@ -484,16 +486,23 @@ class socket_class():
 				else:
 					best_layer_set, best_layer_ids = select_minimal_angle_layer_set(CA_layers_all, layer_ids_all)
 
-				# print ('BEST LAYER', best_layer_ids)
+				# at this point best layer setting is selected and list of ids of first residues at each of its helices is stored in best_layer_ids [doc-docs]
+				# best layer_ids will be then used to cut fragments of chains to pass them to the bundleClass instance [dev-docs]
+				if DEBUG:
+					print ('BEST LAYER', best_layer_ids)
 
 				bundle_length = len(best_layer_set)
 				len_upstream = min(best_layer_ids[0])
+
+				pymol_temp = []
 
 				for c, b in zip(chains, best_layer_ids[0]):
 
 					cut = b - len_upstream
 					#print ("!", len(c.res), len(c.res[cut:cut+bundle_length]), len(c.axis))
 
+					if DEBUG:
+						print('cut selected layers; cut:cut+bundle_len', cut, cut+bundle_length)
 					c.res = c.res[cut:cut+bundle_length]
 					c.axis = c.axis[cut:cut+bundle_length]
 
@@ -512,6 +521,9 @@ class socket_class():
 					bundle.layers.append(layerClass(layer_residues))
 
 				# generate pymol-readable selection
+				#FIXME this only stores the area detected by Socket as CC - it does not affect range of drawn layers in pymol
+				#FIXME there was idea to cut it in case of unreasonable Socket results (not paired helices)
+				#FIXME decide what Socket detected range should be drawn and implement solution
 
 				### DEVEL
 				input_helices_cut = []
@@ -529,13 +541,16 @@ class socket_class():
 					# print(res_num_cut, '\n')
 					input_helices_cut.append((min(res_num_cut), max(res_num_cut), input_helices[c[0]][2], input_helices[c[0]][3]))
 
-				# print(input_helices_cut)
+				if DEBUG:
+					print('pymol session data', input_helices_cut)
 				input_helices = input_helices_cut
 				# for c in chains:
 				# 	for r in c.res:
 				# 		print(r)
 				### END-DEVEL
 
+				#FIXME pymol session in final version should indicate Socket detected region and show layer bars in actually measured layers (from bundleClass chains)
+				#FIXME ppo probably not needed in production
 				bundle.pymol_selection = create_pymol_selection_from_socket_results(input_helices)
 				bundle.ppo = ppo
 

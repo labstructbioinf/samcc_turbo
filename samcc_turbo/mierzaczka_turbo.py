@@ -63,6 +63,8 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 	###DEV-TXT: minimalne użycie: mierzaczka(pdb) odpala dssp, socket, parsuje socket, mierzy, zwraca df, wykres i sesje pymol
 	###DEV-TXT: wersja 0.1A: użycie pliku definiującego helisy (stare samcc)
 	###DEV-TXT: wersja 0.2: kontrola parametrów: czy wykres, df, pymol, ścieżki
+	###DEV-TXT: v. 0.3: defdata mode, expert notebook  and most socketClass annotated with fixme
+	###DEV-TXT: v. 0.4: all fixes annotated
 
 	###DEV-TXT: wersja podająca bezpośrednio definicję (bez pliku)
 

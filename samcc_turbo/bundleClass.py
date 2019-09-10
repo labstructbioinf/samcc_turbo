@@ -5,11 +5,19 @@ import itertools
 import pandas as pd
 
 from . import layerClass, residueClass, chainClass
+#DEV
+import importlib
+importlib.reload(layerClass)
+#
 from .pymol_draw_layers import save_layers_to_pymol
 from Bio.PDB import PDBParser
 from .layerClass import layerClass
 from .residueClass import residueClass
 from .chainClass import chainClass
+
+# DEV
+DEBUG = False
+#
 
 class bundleClass():
 	"""
@@ -368,7 +376,13 @@ class bundleClass():
 
 		#layer_points = [ layer.get_layer_CA() for layer in self.layers ]
 		# plot layers by axis points
-		layer_points = [ layer.get_layer_axis() for layer in self.layers ]
+		layer_points = [ layer.get_layer_axis() for layer in self.layers if (len(layer.get_layer_axis()) == len(layer.res)) ]
+		#FIXME why there is difference in number of points per layer?
+		if DEBUG:
+			print('layers')
+			for l in self.layers:
+				print( l.get_layer_axis_temp() )
+
 
 		if color_selection:
 			save_layers_to_pymol(filename, layer_points, savepath, suffix, pymol_version, color_selection=self.pymol_selection, helix_order=h_order, ppo=self.ppo)
