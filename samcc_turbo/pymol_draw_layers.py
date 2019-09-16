@@ -1,4 +1,5 @@
-def save_layers_to_pymol(pdbpath, layer_points, savepath, suffix, pymol_version=2.0, helices_axis=None, color_selection=False, helix_order=None, ppo=None):
+def save_layers_to_pymol(pdbpath, layer_points, savepath, suffix, pymol_version=2.0, helices_axis=None,
+						 color_selection=False, helix_order=None, ppo=None, bundle_axis=False):
 	''' save each layer as a set of distances between point determining the layer '''
 
 	#FIXME clean from devel code, add docs
@@ -21,6 +22,7 @@ def save_layers_to_pymol(pdbpath, layer_points, savepath, suffix, pymol_version=
 		pymol.cmd.pseudoatom('ppo_' + str(p[0]), pos=list(p[1]))
 
 	### axis drawing code ###
+	# helices axis
 	if helices_axis:
 		for helix in enumerate(helices_axis):
 
@@ -36,6 +38,16 @@ def save_layers_to_pymol(pdbpath, layer_points, savepath, suffix, pymol_version=
 			# pymol.cmd.distance('dist' + str(helix[0]), '/' + h_name_s + '/////1', '/' + h_name_e + '/////1')
 			### this version works for pymol 2.0
 			pymol.cmd.distance('axis' + str(helix[0]), '/' + h_name_s + '///1', '/' + h_name_e + '///1')
+	# bundle axis
+	b_axis_start = list(bundle_axis[1])
+	b_axis_end   = list(bundle_axis[-2])
+	b_name_start = 'bundle_axis_start'
+	b_name_end   = 'bundle_axis_end'
+
+	pymol.cmd.pseudoatom(b_name_start, pos=b_axis_start)
+	pymol.cmd.pseudoatom(b_name_end, pos=b_axis_end)
+
+	pymol.cmd.distance('bundle_axis', '/' + b_name_start + '///1', '/' + b_name_end + '///1')
 	### === ###
 
 	### only show selection and color it code ###
