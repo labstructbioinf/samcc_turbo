@@ -1,6 +1,7 @@
 import networkx as nx
 import itertools
 import numpy as np
+from math import factorial
 
 ##################
 # Helper functions

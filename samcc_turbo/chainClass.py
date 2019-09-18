@@ -5,6 +5,7 @@ from .helper_functions import diffangle
 from .helper_functions import gen_expected_crick_angles
 from .helper_functions import crick_to_pos
 from .helper_functions import calc_crick_ang_dev
+from .helper_functions import savitzky_golay
 
 class chainClass():
 	""" """
