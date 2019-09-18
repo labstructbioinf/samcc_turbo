@@ -13,3 +13,6 @@ class layerClass():
 
 	def get_layer_axis(self):
 		return [ [res.O[0], res.O[1], res.O[2] ] for res in self.res if res.O != None ]
+
+	def get_layer_axis_temp(self):
+		return [ type(res.O) for res in self.res ]

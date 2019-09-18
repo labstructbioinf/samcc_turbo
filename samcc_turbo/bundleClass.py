@@ -5,11 +5,21 @@ import itertools
 import pandas as pd
 
 from . import layerClass, residueClass, chainClass
+#DEV
+import importlib
+from . import pymol_draw_layers
+importlib.reload(layerClass)
+importlib.reload(pymol_draw_layers)
+#
 from .pymol_draw_layers import save_layers_to_pymol
 from Bio.PDB import PDBParser
 from .layerClass import layerClass
 from .residueClass import residueClass
 from .chainClass import chainClass
+
+# DEV
+from .mierzaczka_turbo import DEBUG
+#
 
 class bundleClass():
 	"""
@@ -31,6 +41,11 @@ class bundleClass():
 
 		for l in self.layers[1:-1]:
 			res_in_layer = [r.O for r in l.res]
+			if DEBUG:
+				print('res in layer')
+				print(res_in_layer)
+				print('res in layer sum', np.sum(res_in_layer))
+				print('res in layer sum power', np.sum(res_in_layer) ** (1.0/len(self.chains)))
 			C = np.sum(res_in_layer) ** (1.0/len(self.chains))
 			for r in l.res:
 				r.C = C
@@ -345,6 +360,7 @@ class bundleClass():
 	def pymol_plot_layer(self, filename, savepath, suffix, pymol_version, color_selection=False, helix_order=False):
 
 		#FIXME format docstring, clean from devel comments
+		#FIXME bundle_axis temp (see mierzaczka_turbo.py)
 
 		"""
 		Save layers to pymol session.
@@ -368,9 +384,21 @@ class bundleClass():
 
 		#layer_points = [ layer.get_layer_CA() for layer in self.layers ]
 		# plot layers by axis points
-		layer_points = [ layer.get_layer_axis() for layer in self.layers ]
+		layer_points = [ layer.get_layer_axis() for layer in self.layers if (len(layer.get_layer_axis()) == len(layer.res)) ]
+		#FIXME why there is difference in number of points per layer?
+		if DEBUG:
+			print('layers')
+			for l in self.layers:
+				print( l.get_layer_axis_temp() )
 
+		if DEBUG:
+			print('bundle axis')
+			print(self.axis)
+
+		#FIXME bundle_axis temp
 		if color_selection:
-			save_layers_to_pymol(filename, layer_points, savepath, suffix, pymol_version, color_selection=self.pymol_selection, helix_order=h_order, ppo=self.ppo)
+			save_layers_to_pymol(filename, layer_points, savepath, suffix, pymol_version, color_selection=self.pymol_selection,
+								 helix_order=h_order, ppo=self.ppo, bundle_axis=self.axis)
 		else:
-			save_layers_to_pymol(filename, layer_points, savepath, suffix, pymol_version, color_selection=False, helix_order=h_order, ppo=self.ppo)
+			save_layers_to_pymol(filename, layer_points, savepath, suffix, pymol_version, color_selection=False,
+								 helix_order=h_order, ppo=self.ppo, bundle_axis=self.axis)

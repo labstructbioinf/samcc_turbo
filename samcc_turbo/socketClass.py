@@ -5,6 +5,8 @@ importlib.reload(helper_functions)
 importlib.reload(chainClass)
 importlib.reload(layer_detection)
 importlib.reload(bundleClass)
+
+from .mierzaczka_turbo import DEBUG
 # END-DEV
 
 from .helper_functions import detect_helices_orientation
@@ -40,7 +42,7 @@ class socket_class():
 		self.pdb_filename = pdb_filename
 
 
-	def get_bundles(self, mode, res_num_layer_detection=5):
+	def get_bundles(self, mode, res_num_layer_detection=5, distance_threshold=50, search_layer_setting_num=3):
 		#FIXME update docstring once final version
 		"""
 		Given a SOCKET raw data calculates a proper bundle(s) in which all helices are of the same length
@@ -85,6 +87,7 @@ class socket_class():
 
 		def from_deffile():
 
+			#FIXME probably not useful - check and if so then delete
 			#FIXME elaborate on deffile format
 
 			"""
@@ -216,8 +219,6 @@ class socket_class():
 
 		bundles = []
 
-		#DEVEL
-		DEBUG=False
 
 		if mode == 'deffile':
 			"""Do not determine order in automatic way but use bundle definition file."""
@@ -359,7 +360,7 @@ class socket_class():
 				# 	print(len(c))
 				### END-DEVEL
 
-				#FIXME this probably was used to draw approximated helix axis in pymol, now not used, use or delete
+				#FIXME this probably was used to draw approximated helix axis in pymol, now not used, use or delete (it is still arg in drawing function)
 				helices_axis = [(c[0], c[-1]) for c in helices_axis_all]
 
 				# FIXME possible issue (next block too):
@@ -410,7 +411,8 @@ class socket_class():
 				# find first layer starting from different segments of coil, these segments are defined from helix_axis_all after minimal distance filter (see above) [dev-doc]
 				#FIXME set distance flag and check its value after each segment: if False then skip to layer detection rerun with higher res_num_layer_detection
 				#FIXME it step may be computational costly so it will speed up script
-				first_layer, first_distance       = find_bundle_boundry_layer_universal(helices_pts_first, neighbour_interactions)
+				first_layer, first_distance       = find_bundle_boundry_layer_universal(helices_pts_first, neighbour_interactions,
+													distance_threshold=distance_threshold, search_layer_setting_num=search_layer_setting_num)
 
 				#FIXME find CA on given helix that is closest to the point on axis - maybe this should find CA related to this point not the closest one
 				#FIXME i.e. CA that was used to compute this point on axis (if there was just one) - check how exactly axis is calculated
@@ -419,13 +421,20 @@ class socket_class():
 					for h in helices_CA:
 						print(len(h))
 
-				CA_first_layer, first_layer_ids   = find_closest_CA_to_point(first_layer, helices_CA)
+				#FIXME: n-distance: this should operate on first_layer as a list now
+				#FIXME: single min-dist version:
+				#CA_first_layer, first_layer_ids   = find_closest_CA_to_point(first_layer, helices_CA)
+				CA_first_layer_ids   = [ find_closest_CA_to_point(layer, helices_CA) for layer in first_layer ]
 
-				last_layer, last_distance         = find_bundle_boundry_layer_universal(helices_pts_last, neighbour_interactions)
-				CA_last_layer, last_layer_ids     = find_closest_CA_to_point(last_layer, helices_CA)
+				last_layer, last_distance         = find_bundle_boundry_layer_universal(helices_pts_last, neighbour_interactions,
+													distance_threshold=distance_threshold, search_layer_setting_num=search_layer_setting_num)
+				#CA_last_layer, last_layer_ids     = find_closest_CA_to_point(last_layer, helices_CA)
+				CA_last_layer_ids   = [ find_closest_CA_to_point(layer, helices_CA) for layer in last_layer ]
 
-				middle_layer, middle_distance     = find_bundle_boundry_layer_universal(helices_pts_middle, neighbour_interactions)
-				CA_middle_layer, middle_layer_ids = find_closest_CA_to_point(middle_layer, helices_CA)
+				middle_layer, middle_distance     = find_bundle_boundry_layer_universal(helices_pts_middle, neighbour_interactions,
+													distance_threshold=distance_threshold, search_layer_setting_num=search_layer_setting_num)
+				#CA_middle_layer, middle_layer_ids = find_closest_CA_to_point(middle_layer, helices_CA)
+				CA_middle_layer_ids = [ find_closest_CA_to_point(layer, helices_CA) for layer in middle_layer ]
 
 				### DEVEL
 				### if none of layer settings return reasonable distance: search again with bigger part of the bundle
@@ -451,32 +460,50 @@ class socket_class():
 					# print(neighbour_interactions)
 
 					# find first layer starting from different segments of coil
-					first_layer, first_distance       = find_bundle_boundry_layer_universal(helices_pts_first, neighbour_interactions)
-					CA_first_layer, first_layer_ids   = find_closest_CA_to_point(first_layer, helices_CA)
+
+					#FIXME: n-distance: this should operate on first_layer as a list now
+					#FIXME: single min-dist version:
+					#CA_first_layer, first_layer_ids   = find_closest_CA_to_point(first_layer, helices_CA)
+					first_layer, first_distance       = find_bundle_boundry_layer_universal(helices_pts_first, neighbour_interactions,
+														distance_threshold=distance_threshold, search_layer_setting_num=search_layer_setting_num)
+					CA_first_layer_ids   = [ find_closest_CA_to_point(layer, helices_CA) for layer in first_layer ]
 
 					last_layer, last_distance         = find_bundle_boundry_layer_universal(helices_pts_last, neighbour_interactions)
-					CA_last_layer, last_layer_ids     = find_closest_CA_to_point(last_layer, helices_CA)
+					#CA_last_layer, last_layer_ids     = find_closest_CA_to_point(last_layer, helices_CA)
+					CA_last_layer_ids   = [ find_closest_CA_to_point(layer, helices_CA) for layer in last_layer ]
 
 					middle_layer, middle_distance     = find_bundle_boundry_layer_universal(helices_pts_middle, neighbour_interactions)
-					CA_middle_layer, middle_layer_ids = find_closest_CA_to_point(middle_layer, helices_CA)
+					#CA_middle_layer, middle_layer_ids = find_closest_CA_to_point(middle_layer, helices_CA)
+					CA_middle_layer_ids = [ find_closest_CA_to_point(layer, helices_CA) for layer in middle_layer ]
 
 					# print('CORRECTED:', first_distance, last_distance, middle_distance)
 
 				### end search again
 				### END-DEVEL
 
-				CA_layers                         = [CA_first_layer, CA_last_layer, CA_middle_layer]
+				#FIXME does not seem to be used - examine and delete if not needed
+				# CA_layers                         = [CA_first_layer, CA_last_layer, CA_middle_layer]
 
 				# find all layers starting from all found points
-				CA_layers_from_first   = find_all_layers_from_layer(first_layer_ids, helices_CA)
-				CA_layers_from_last    = find_all_layers_from_layer(last_layer_ids, helices_CA)
-				CA_layers_from_middle  = find_all_layers_from_layer(middle_layer_ids, helices_CA)
+				#FIXME: singular version:
+				#CA_layers_from_first   = find_all_layers_from_layer(first_layer_ids, helices_CA)
+				#FIXME n-distance:
+				CA_layers_from_first   = [ find_all_layers_from_layer(layer[1], helices_CA) for layer in CA_first_layer_ids ]
+				CA_layers_from_last    = [ find_all_layers_from_layer(layer[1], helices_CA) for layer in CA_last_layer_ids ]
+				CA_layers_from_middle  = [ find_all_layers_from_layer(layer[1], helices_CA) for layer in CA_middle_layer_ids ]
 
 				# check average angle between layers and select layer setting with smaller avg angle for samcc input
+				#FIXME n-distance: now selects from multipe starting layers for 3 point in bundle
 				CA_layers_all                  = [CA_layers_from_first, CA_layers_from_last, CA_layers_from_middle]
-				layer_ids_all                  = [(first_layer_ids,'both'), (last_layer_ids, 'both'), (middle_layer_ids, 'both')]
+				#FIXME singular version:
+				#layer_ids_all                  = [(first_layer_ids,'both'), (last_layer_ids, 'both'), (middle_layer_ids, 'both')]
+				layer_ids_all                  = [ [ (layer[1],'both') for layer in CA_first_layer_ids ],
+												   [ (layer[1],'both') for layer in CA_last_layer_ids ],
+												   [ (layer[1],'both') for layer in CA_middle_layer_ids ] ]
 
 				#FIXME implement new method for dimers
+				#FIXME cast helices onto plane and measure angle between points on first helix and corresponding points on second helix
+				#FIXME n-distance: now selects from multiple starting layers
 				# case of dimers (only 2 helices)
 				if len(CA_layers_from_first[0]) == 2:
 					best_layer_set, best_layer_ids = select_minimal_distance_layer_set(CA_layers_all, layer_ids_all)
@@ -484,16 +511,23 @@ class socket_class():
 				else:
 					best_layer_set, best_layer_ids = select_minimal_angle_layer_set(CA_layers_all, layer_ids_all)
 
-				# print ('BEST LAYER', best_layer_ids)
+				# at this point best layer setting is selected and list of ids of first residues at each of its helices is stored in best_layer_ids [doc-docs]
+				# best layer_ids will be then used to cut fragments of chains to pass them to the bundleClass instance [dev-docs]
+				if DEBUG:
+					print ('BEST LAYER', best_layer_ids)
 
 				bundle_length = len(best_layer_set)
 				len_upstream = min(best_layer_ids[0])
+
+				pymol_temp = []
 
 				for c, b in zip(chains, best_layer_ids[0]):
 
 					cut = b - len_upstream
 					#print ("!", len(c.res), len(c.res[cut:cut+bundle_length]), len(c.axis))
 
+					if DEBUG:
+						print('cut selected layers; cut:cut+bundle_len', cut, cut+bundle_length)
 					c.res = c.res[cut:cut+bundle_length]
 					c.axis = c.axis[cut:cut+bundle_length]
 
@@ -512,6 +546,9 @@ class socket_class():
 					bundle.layers.append(layerClass(layer_residues))
 
 				# generate pymol-readable selection
+				#FIXME this only stores the area detected by Socket as CC - it does not affect range of drawn layers in pymol
+				#FIXME there was idea to cut it in case of unreasonable Socket results (not paired helices)
+				#FIXME decide what Socket detected range should be drawn and implement solution
 
 				### DEVEL
 				input_helices_cut = []
@@ -529,13 +566,16 @@ class socket_class():
 					# print(res_num_cut, '\n')
 					input_helices_cut.append((min(res_num_cut), max(res_num_cut), input_helices[c[0]][2], input_helices[c[0]][3]))
 
-				# print(input_helices_cut)
+				if DEBUG:
+					print('pymol session data', input_helices_cut)
 				input_helices = input_helices_cut
 				# for c in chains:
 				# 	for r in c.res:
 				# 		print(r)
 				### END-DEVEL
 
+				#FIXME pymol session in final version should indicate Socket detected region and show layer bars in actually measured layers (from bundleClass chains)
+				#FIXME ppo probably not needed in production
 				bundle.pymol_selection = create_pymol_selection_from_socket_results(input_helices)
 				bundle.ppo = ppo
 

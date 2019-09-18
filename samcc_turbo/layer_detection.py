@@ -5,6 +5,9 @@ import scipy.spatial.distance as distance
 from Bio import PDB
 from .bundle import get_local_axis
 
+#DEVEL
+from .mierzaczka_turbo import DEBUG
+
 def create_pymol_selection_from_socket_results(indices):
 
 	#FIXME format docstring
@@ -424,7 +427,7 @@ def detect_helix_order(*helices_pts_set, helices_pts_all):
 
 	return neighbour_interactions_list[best_order], ppo
 
-def find_bundle_boundry_layer_universal(helices_pts, neighbour_interactions, distance_threshold=50):
+def find_bundle_boundry_layer_universal(helices_pts, neighbour_interactions, distance_threshold=50, search_layer_setting_num=3):
 
 	#FIXME format docstrings, clean from devel code
 
@@ -492,12 +495,32 @@ def find_bundle_boundry_layer_universal(helices_pts, neighbour_interactions, dis
 		distances = { layer:get_distances(layer, distance_to_pos, pts_distances) for layer in itertools.product(points_list, repeat=2) }
 	else:
 		distances = { layer:get_distances(layer, distance_to_pos, pts_distances) for layer in itertools.product(points_list, repeat=len(distance_to_pos)) }
-	min_distance = min(distances, key=distances.get)
+	# singular min-dist
+	# min_distance = min(distances, key=distances.get)
+
+	# prototype: get more than one min distance
+	import heapq
+	min_distance = heapq.nsmallest(search_layer_setting_num, distances, key=distances.get)
+
+	if DEBUG:
+		print('min distance')
+		print(min_distance)
+
 
 	# extract coords of the layer that has minimal distance between helices
+	# min-dist: singular
+	# first_layer = []
+	# for helix_point in enumerate(min_distance):
+	# 	first_layer.append([ pt for pt in helices_pts[helix_point[0]][helix_point[1]] ])
 	first_layer = []
-	for helix_point in enumerate(min_distance):
-		first_layer.append([ pt for pt in helices_pts[helix_point[0]][helix_point[1]] ])
+	for mdist in min_distance:
+		points_set = []
+		for helix_point in enumerate(mdist):
+			points_set.append([ pt for pt in helices_pts[helix_point[0]][helix_point[1]] ])
+		first_layer.append(points_set)
+	if DEBUG:
+		print('FL-n-dist:', first_layer, len(first_layer))
+
 
 	# check if smallest distance between layers to large for reasonable layer
 	if min(distances.values()) > distance_threshold:
@@ -505,6 +528,7 @@ def find_bundle_boundry_layer_universal(helices_pts, neighbour_interactions, dis
 	else:
 		distance_check = True
 
+	#FIXME n-distance: first_layer becomes list to try different variants
 	return first_layer, distance_check
 
 def find_closest_CA_to_point(layer_pts, helices_CA):
@@ -648,6 +672,7 @@ def select_minimal_angle_layer_set_OLD(CA_layers_list, layer_ids_list):
 def select_minimal_angle_layer_set(CA_layers_list, layer_ids_list):
 
 	#FIXME format docstring, clean from devel code
+	#FIXME n-distance: adapting for many layer settings from each point in the bundle
 
 	''' find layer set with minimal angle between layers '''
 	''' input: (CA_layers_list) list of lists of layers, each layer represented as n-element list of 3-element lists of coords (float) of CAs '''
@@ -708,13 +733,43 @@ def select_minimal_angle_layer_set(CA_layers_list, layer_ids_list):
 
 		return np.mean(layer_angles)
 
-	layer_set_angles     = (list(map(check_layers_shape, CA_layers_list)))
-	# print(layer_ids_list)
-	# print(layer_set_angles)
+	if DEBUG:
+		print('n-dist')
+		for cal in CA_layers_list:
+			print(len(cal))
+			for c in cal:
+				print(len(c))
+		print('n-dist', layer_ids_list[0])
+
+	#FIXME n-dist: transform into list of all layer settings from all points in bundle
+	CA_layers_list_all = []
+	layer_ids_list_all = []
+	for layer_set in CA_layers_list:
+		for points_set in layer_set:
+			CA_layers_list_all.append(points_set)
+
+	for layer_set in layer_ids_list:
+		for points_set in layer_set:
+			layer_ids_list_all.append(points_set)
+
+	if DEBUG:
+		print('CA-layers-aggr')
+		print(len(CA_layers_list_all))
+		print('layer-ids-aggr')
+		print(layer_ids_list_all)
+		print(len(layer_ids_list_all))
+
+
+	#layer_set_angles     = (list(map(check_layers_shape, CA_layers_list)))
+	layer_set_angles     = (list(map(check_layers_shape, CA_layers_list_all)))
+	if DEBUG:
+		print('layer selection: ids and angles')
+		print(layer_ids_list)
+		print(layer_set_angles)
 	best_layer_set_angle = min(layer_set_angles)
 
-	best_layer_set = CA_layers_list[layer_set_angles.index(best_layer_set_angle)]
-	best_layer_ids = layer_ids_list[layer_set_angles.index(best_layer_set_angle)]
+	best_layer_set = CA_layers_list_all[layer_set_angles.index(best_layer_set_angle)]
+	best_layer_ids = layer_ids_list_all[layer_set_angles.index(best_layer_set_angle)]
 
 	return best_layer_set, best_layer_ids
 
