@@ -23,6 +23,7 @@ def create_pymol_selection_from_socket_results(indices):
 
 	return selection
 
+"""
 def detect_helices_orientation(indices, orientation_data):
 
 	#FIXME check if not redundant with function from helper_functions
@@ -105,6 +106,7 @@ def detect_helices_orientation(indices, orientation_data):
 			orientation[hid_other] = 'ap'
 
 	return orientation
+"""
 
 def get_dssp_data(model, pdbpath, selection, orientation, verbose=False, dssp='mkdssp'):
 

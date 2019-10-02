@@ -25,10 +25,10 @@ from .layer_detection import create_pymol_selection_from_socket_results
 ### Exceptions
 
 class NoResidue(Exception):
-    pass
+	pass
 
 class TooShort(Exception):
-    pass
+	pass
 
 class socket_class():
 	""" """
@@ -78,10 +78,18 @@ class socket_class():
 				o = detect_helices_orientation(cc['indices'], self.socket_data[1])
 				bundleDesc = []
 				for helix in cc['indices']:
-					bundleDesc.append((int(helix[1]), int(helix[2]), helix[3], o[int(helix[0])]==-1))
-				bundles.append(bundleDesc)
+					bundleDesc.append([int(helix[1]), int(helix[2]), helix[3], o[int(helix[0])]==-1])
+					
+				# if all helices in a bundle are AP then we should
+				# switch them all to P (parallel)
+				
+				if all([i[3] for i in bundleDesc]):
+					new_bundleDesc=[]
+					for i in bundleDesc:
+						new_bundleDesc.append(i[:-1] + [False])
+					bundleDesc = new_bundleDesc
 
-			#print(bundles)
+				bundles.append(bundleDesc)
 
 			return bundles
 
