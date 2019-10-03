@@ -26,8 +26,8 @@ def save_layers_to_pymol(pdbpath, layer_points, savepath, suffix, pymol_version=
 	if helices_axis:
 		for helix in enumerate(helices_axis):
 
-			h_start  = list(helix[1][0])
-			h_end    = list(helix[1][1])
+			h_start  = list(helix[1][1])
+			h_end    = list(helix[1][-2])
 			h_name_s = 'axp' + str(helix[0]) + '_start'
 			h_name_e = 'axp' + str(helix[0]) + '_end'
 
