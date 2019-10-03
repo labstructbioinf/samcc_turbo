@@ -31,6 +31,7 @@ class bundleClass():
 		self.layers = []
 		self.pymol_selection = []
 		self.helix_order = []
+		self.helices_axis = []
 		self.ppo = []
 
 	def calc_bundleaxis(self):
@@ -52,6 +53,13 @@ class bundleClass():
 			axis.append(C)
 
 		self.axis = [None]+axis+[None]
+
+	def get_helicesaxis(self):
+
+		#FIXME docs
+
+		for c in self.chains:
+			self.helices_axis.append(c.axis)
 
 
 	def calc_pitch_angle(self):
@@ -357,7 +365,7 @@ class bundleClass():
 		else:
 			plt.savefig(filename, dpi=150)
 
-	def pymol_plot_layer(self, filename, savepath, suffix, pymol_version, color_selection=False, helix_order=False):
+	def pymol_plot_layer(self, filename, savepath, suffix, pymol_version, color_selection=False, helix_order=False, helices_axis=None):
 
 		#FIXME format docstring, clean from devel comments
 		#FIXME bundle_axis temp (see mierzaczka_turbo.py)
@@ -398,7 +406,7 @@ class bundleClass():
 		#FIXME bundle_axis temp
 		if color_selection:
 			save_layers_to_pymol(filename, layer_points, savepath, suffix, pymol_version, color_selection=self.pymol_selection,
-								 helix_order=h_order, ppo=self.ppo, bundle_axis=self.axis)
+								 helix_order=h_order, ppo=self.ppo, bundle_axis=self.axis, helices_axis=self.helices_axis)
 		else:
 			save_layers_to_pymol(filename, layer_points, savepath, suffix, pymol_version, color_selection=False,
-								 helix_order=h_order, ppo=self.ppo, bundle_axis=self.axis)
+								 helix_order=h_order, ppo=self.ppo, bundle_axis=self.axis, helices_axis=self.helices_axis)
