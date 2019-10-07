@@ -42,7 +42,7 @@ class socket_class():
 		self.pdb_filename = pdb_filename
 
 
-	def get_bundles(self, mode, res_num_layer_detection=5, distance_threshold=50, search_layer_setting_num=3):
+	def get_bundles(self, mode, res_num_layer_detection=5, distance_threshold='auto', search_layer_setting_num=3):
 		#FIXME update docstring once final version
 		"""
 		Given a SOCKET raw data calculates a proper bundle(s) in which all helices are of the same length
@@ -79,10 +79,10 @@ class socket_class():
 				bundleDesc = []
 				for helix in cc['indices']:
 					bundleDesc.append([int(helix[1]), int(helix[2]), helix[3], o[int(helix[0])]==-1])
-					
+
 				# if all helices in a bundle are AP then we should
 				# switch them all to P (parallel)
-				
+
 				if all([i[3] for i in bundleDesc]):
 					new_bundleDesc=[]
 					for i in bundleDesc:
@@ -271,10 +271,22 @@ class socket_class():
 			for input_helices in parse_socket():
 				if DEBUG:
 					print('IH', input_helices)
+					print('LEN IH', len(input_helices))
 
-				chains = parse_pdb(input_helices, self.pdb_filename)
+				try:
+					chains = parse_pdb(input_helices, self.pdb_filename)
+				except NoResidue:
+					print('No residue error')
+					continue
 
 				#FIXME clean from devel, add short description how detection works
+
+				# assign distance_threshold according to oligomerization state
+				default_distance_threshold = {2:30, 3:40, 4:50, 5:60, 6:70, 7:80, 8:90, 9:100}
+				if distance_threshold == 'auto':
+					distance_threshold_set = default_distance_threshold[len(input_helices)]
+				else:
+					distance_threshold_set = distance_threshold
 
 				# calculate axis of the bundle
 				for c in chains:
@@ -379,7 +391,9 @@ class socket_class():
 
 				# this block checks if the length of shortest helix is bigger than number of residues on helix that will be searched [dev-doc]
 				if shortest_helix_len < res_num_layer_detection:
-					raise TooShort
+					#raise TooShort
+					print('Too short error')
+					continue
 					#res_num_layer_detection_asserted = shortest_helix_len
 					#print('Warning: one of the helices was too short to start layer search with res_num_layer_detection= ' + str(res_num_layer_detection) + '; searching with res_num_layer_detection=' + str(res_num_layer_detection_asserted))
 				else:
@@ -420,7 +434,7 @@ class socket_class():
 				#FIXME set distance flag and check its value after each segment: if False then skip to layer detection rerun with higher res_num_layer_detection
 				#FIXME it step may be computational costly so it will speed up script
 				first_layer, first_distance       = find_bundle_boundry_layer_universal(helices_pts_first, neighbour_interactions,
-													distance_threshold=distance_threshold, search_layer_setting_num=search_layer_setting_num)
+													distance_threshold=distance_threshold_set, search_layer_setting_num=search_layer_setting_num)
 
 				#FIXME find CA on given helix that is closest to the point on axis - maybe this should find CA related to this point not the closest one
 				#FIXME i.e. CA that was used to compute this point on axis (if there was just one) - check how exactly axis is calculated
@@ -435,12 +449,12 @@ class socket_class():
 				CA_first_layer_ids   = [ find_closest_CA_to_point(layer, helices_CA) for layer in first_layer ]
 
 				last_layer, last_distance         = find_bundle_boundry_layer_universal(helices_pts_last, neighbour_interactions,
-													distance_threshold=distance_threshold, search_layer_setting_num=search_layer_setting_num)
+													distance_threshold=distance_threshold_set, search_layer_setting_num=search_layer_setting_num)
 				#CA_last_layer, last_layer_ids     = find_closest_CA_to_point(last_layer, helices_CA)
 				CA_last_layer_ids   = [ find_closest_CA_to_point(layer, helices_CA) for layer in last_layer ]
 
 				middle_layer, middle_distance     = find_bundle_boundry_layer_universal(helices_pts_middle, neighbour_interactions,
-													distance_threshold=distance_threshold, search_layer_setting_num=search_layer_setting_num)
+													distance_threshold=distance_threshold_set, search_layer_setting_num=search_layer_setting_num)
 				#CA_middle_layer, middle_layer_ids = find_closest_CA_to_point(middle_layer, helices_CA)
 				CA_middle_layer_ids = [ find_closest_CA_to_point(layer, helices_CA) for layer in middle_layer ]
 
@@ -473,14 +487,16 @@ class socket_class():
 					#FIXME: single min-dist version:
 					#CA_first_layer, first_layer_ids   = find_closest_CA_to_point(first_layer, helices_CA)
 					first_layer, first_distance       = find_bundle_boundry_layer_universal(helices_pts_first, neighbour_interactions,
-														distance_threshold=distance_threshold, search_layer_setting_num=search_layer_setting_num)
+														distance_threshold=distance_threshold_set, search_layer_setting_num=search_layer_setting_num)
 					CA_first_layer_ids   = [ find_closest_CA_to_point(layer, helices_CA) for layer in first_layer ]
 
-					last_layer, last_distance         = find_bundle_boundry_layer_universal(helices_pts_last, neighbour_interactions)
+					last_layer, last_distance         = find_bundle_boundry_layer_universal(helices_pts_last, neighbour_interactions,
+														distance_threshold=distance_threshold_set, search_layer_setting_num=search_layer_setting_num)
 					#CA_last_layer, last_layer_ids     = find_closest_CA_to_point(last_layer, helices_CA)
 					CA_last_layer_ids   = [ find_closest_CA_to_point(layer, helices_CA) for layer in last_layer ]
 
-					middle_layer, middle_distance     = find_bundle_boundry_layer_universal(helices_pts_middle, neighbour_interactions)
+					middle_layer, middle_distance     = find_bundle_boundry_layer_universal(helices_pts_middle, neighbour_interactions,
+														distance_threshold=distance_threshold_set, search_layer_setting_num=search_layer_setting_num)
 					#CA_middle_layer, middle_layer_ids = find_closest_CA_to_point(middle_layer, helices_CA)
 					CA_middle_layer_ids = [ find_closest_CA_to_point(layer, helices_CA) for layer in middle_layer ]
 

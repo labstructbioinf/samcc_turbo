@@ -43,7 +43,7 @@ from .bundleClass import bundleClass
 def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 					plot=True, save_df=True, save_pse=True,
 					bin_paths={'dssp':'dssp', 'socket':'socket'},
-					layer_detect_n=5, max_dist=50, search_set_n=3):
+					layer_detect_n=5, max_dist='auto', search_set_n=3):
 	"""Main function for running samcc-turbo.
 
 	Arguments (general):
@@ -68,7 +68,9 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 					  layer setting; if total distance between residues in layer
 					  if greater that this number the layer will be discarded, if
 					  no layer will pass this filter then layer detection will
-					  be repeated with bigger layer_detect_n (default 50)
+					  be repeated with bigger layer_detect_n; if set to auto
+					  then threshold will be assigned basing on oligomerization
+					  (default auto)
 	search_set_n   -- number of starting layer settings that will be selected
 					  basing on minimal distance between residues to be compared
 					  in terms of angle between all layers in structure (default 3)
