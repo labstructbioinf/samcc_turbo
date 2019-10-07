@@ -43,7 +43,7 @@ from .bundleClass import bundleClass
 def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 					plot=True, save_df=True, save_pse=True,
 					bin_paths={'dssp':'dssp', 'socket':'socket'},
-					layer_detect_n=5, max_dist=50, search_set_n=3):
+					layer_detect_n=5, max_dist='auto', search_set_n=3):
 	"""Main function for running samcc-turbo.
 
 	Arguments (general):
@@ -68,7 +68,9 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 					  layer setting; if total distance between residues in layer
 					  if greater that this number the layer will be discarded, if
 					  no layer will pass this filter then layer detection will
-					  be repeated with bigger layer_detect_n (default 50)
+					  be repeated with bigger layer_detect_n; if set to auto
+					  then threshold will be assigned basing on oligomerization
+					  (default auto)
 	search_set_n   -- number of starting layer settings that will be selected
 					  basing on minimal distance between residues to be compared
 					  in terms of angle between all layers in structure (default 3)
@@ -100,6 +102,7 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 
 		for bid, bundle in enumerate(bundles):
 			bundle.calc_bundleaxis()
+			bundle.get_helicesaxis()
 			bundle.calc_periodicity()
 			bundle.calc_radius()
 			bundle.calc_crick()
@@ -112,10 +115,10 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 				pickle.dump(bundle.gendf(), open(pdbpath.split('.')[0] + '_coil_' + str(bid) + '.p', 'wb'))
 
 			#FIXME bundle_axis parameter is temporary unless accepted as production feature
-			#FIXME is it necessarry to give bundle atributes here?
+			#FIXME is it necessarry to give bundle atributes here? - should work with only True/False; function is method of bundleClass and can get from self atributes
 			if save_pse:
 				bundle.pymol_plot_layer(filename=pdbpath ,savepath='/'.join(pdbpath.split('/')[:-1]), suffix='coil_' + str(bid),
-										pymol_version=2.0, color_selection=True, helix_order=bundle.helix_order)
+										pymol_version=2.0, color_selection=True, helix_order=bundle.helix_order, helices_axis=bundle.helices_axis)
 
 	elif mode == 'defdata':
 
@@ -123,6 +126,7 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 		bundle.from_defdata(pdbpath, *defdata)
 
 		bundle.calc_bundleaxis()
+		bundle.get_helicesaxis()
 		bundle.calc_periodicity()
 		bundle.calc_radius()
 		bundle.calc_crick()
@@ -137,7 +141,7 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 
 		if save_pse:
 			bundle.pymol_plot_layer(filename=pdbpath ,savepath='/'.join(pdbpath.split('/')[:-1]), suffix='coil',
-									pymol_version=2.0, color_selection=True, helix_order=bundle.helix_order)
+									pymol_version=2.0, color_selection=True, helix_order=bundle.helix_order, helices_axis=bundle.helices_axis)
 
 	elif mode == 'deffile':
 		#FIXME add behaviour for definition file
