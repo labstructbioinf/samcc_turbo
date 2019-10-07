@@ -173,7 +173,7 @@ class socket_class():
 
 			"""
 
-			parser=PDBParser()
+			parser=PDBParser(QUIET=True)
 			structure=parser.get_structure('temp', pdb_filename)
 
 			chains = []
