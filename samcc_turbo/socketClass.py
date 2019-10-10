@@ -72,13 +72,15 @@ class socket_class():
 
 			bundles = []
 
-			#print(self.socket_data[1])
-
-			for cc in self.socket_data[0]:
-				o = detect_helices_orientation(cc['indices'], self.socket_data[1])
+			for cc_id in self.socket_data:
+				cc = self.socket_data[cc_id]
+				# detect helices orientation
+				o = detect_helices_orientation(cc['indices'], cc['relations'])
+				
 				bundleDesc = []
-				for helix in cc['indices']:
-					bundleDesc.append([int(helix[1]), int(helix[2]), helix[3], o[int(helix[0])]==-1])
+				for helix_id in cc['indices']:
+					helix = cc['indices'][helix_id]
+					bundleDesc.append([helix['start'], helix['end'], helix['chain'], o[helix_id]==-1])
 
 				# if all helices in a bundle are AP then we should
 				# switch them all to P (parallel)

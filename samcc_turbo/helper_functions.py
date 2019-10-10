@@ -51,9 +51,9 @@ def diffangle(targetA, sourceA):
 
 	#FIXME add docs, consider more meaningful variable names
 
-    a = targetA - sourceA
-    a = (a + 180) % 360 - 180
-    return a
+	a = targetA - sourceA
+	a = (a + 180) % 360 - 180
+	return a
 
 def crick_to_pos(start_Cr_ang, exp_helix_crick):
 
@@ -113,15 +113,15 @@ def window(seq, n=2):
 
 	###FIXME is this function still used? del or docs
 
-    "Returns a sliding window (of width n) over data from the iterable"
-    "   s -> (s0,s1,...s[n-1]), (s1,s2,...,sn), ...                   "
-    it = iter(seq)
-    result = tuple(itertools.islice(it, n))
-    if len(result) == n:
-        yield result
-    for elem in it:
-        result = result[1:] + (elem,)
-        yield result
+	"Returns a sliding window (of width n) over data from the iterable"
+	"   s -> (s0,s1,...s[n-1]), (s1,s2,...,sn), ...                   "
+	it = iter(seq)
+	result = tuple(itertools.islice(it, n))
+	if len(result) == n:
+		yield result
+	for elem in it:
+		result = result[1:] + (elem,)
+		yield result
 
 def savitzky_golay(y, window_size, order, deriv=0, rate=1):
 
@@ -176,29 +176,41 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
 
 def detect_helices_orientation(indices, orientation_data):
 
-	#FIXME add docs, consider more meaningful variable names
+	"""
+	Arguments
+	
+	indices: dict of bundle helices from Socket
+	orientation_data: relative orientation of the helices from indices
+	
+	Returns
+	
+	a dict helix_id -> orientation
+	
+	this function uses a graph to convert relative orientations between the helices
+	to parallel/anti-parallel labels for each helix
+	
+	"""
 
-    G=nx.Graph()
-    for o in orientation_data:
-        G.add_edge(int(o[0]), int(o[1]), o=o[2])
+	G=nx.Graph()
+	for o in orientation_data:
+		G.add_edge(o[0], o[1], o=o[2])
 
-    res = {}
+	res = {}
 
-    for g in nx.connected_component_subgraphs(G):
+	for g in nx.connected_component_subgraphs(G):
 
-        first=True
-        for e in list(nx.dfs_edges(g)):
-            #print e
-            if first:
-                g.node[e[0]]['o'] = 1
-                first = False
+		first=True
+		for e in list(nx.dfs_edges(g)):
+			if first:
+				g.node[e[0]]['o'] = 1
+				first = False
 
-            if g[e[0]][e[1]]['o']=='antiparallel':
-                g.node[e[1]]['o'] = g.node[e[0]]['o']*-1
-            else:
-                g.node[e[1]]['o'] = g.node[e[0]]['o']
+			if g[e[0]][e[1]]['o']=='antiparallel':
+				g.node[e[1]]['o'] = g.node[e[0]]['o']*-1
+			else:
+				g.node[e[1]]['o'] = g.node[e[0]]['o']
 
-        for n in g.nodes():
-                res[n] = g.node[n]['o']
+		for n in g.nodes():
+				res[n] = g.node[n]['o']
 
-    return res
+	return res
