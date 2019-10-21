@@ -125,8 +125,6 @@ def window(seq, n=2):
 
 def savitzky_golay(y, window_size, order, deriv=0, rate=1):
 
-	#FIXME is this function still used?
-
 	"""Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
 	The Savitzky-Golay filter removes high frequency noise from data.
 	It has the advantage of preserving the original shape and
