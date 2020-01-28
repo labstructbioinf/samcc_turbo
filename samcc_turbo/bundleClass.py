@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+plt.switch_backend('SVG') 
 import seaborn as sns
 import itertools
 import pandas as pd
