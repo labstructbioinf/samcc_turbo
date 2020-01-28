@@ -1,5 +1,6 @@
 from .bundle import get_local_axis
 import numpy as np
+import itertools
 from Bio.PDB import calc_dihedral, vector_to_axis
 from .helper_functions import diffangle
 from .helper_functions import gen_expected_crick_angles
@@ -280,14 +281,81 @@ class chainClass():
 		self.res[-1].A=None
 		self.A = [None]+[r.A for r in self.res[1:-1]]+[None]
 
-	def assign_positions(self, P, REP, optimal_ph1):
+	def assign_positions(self):
+		"""Assigns heptad positions using TWISTER algorithm."""
+		
+		hpos=['?', '?']
+		pos = 2
+		
+		if self.ap:
+			crick = self.crick[::-1]
+		else:
+			crick = self.crick
+		
+		while pos < len(self.res)-2:
+							
+			if crick[pos-1] < 0 and crick[pos] > 0 and abs(crick[pos-1]) > abs(crick[pos]):
+				hpos.extend(['a', 'b', 'c'])
+				pos+=3
+			elif crick[pos] < 0 and crick[pos+1] > 0 and abs(crick[pos]) < abs(crick[pos+1]):
+				hpos.extend(['d', 'e', 'f', 'g'])
+				pos+=4
+			else:
+				hpos.append('?')
+				pos+=1
+				
 
-		#FIXME add docs
+		hpos = hpos[:len(self.res)-2]
 
-		angles = gen_expected_crick_angles(P, REP, optimal_ph1)
-		self.positions = ['?'] + [crick_to_pos(c, angles)[1] for c in self.crick[1:-1]] + ['?']
+		#print("".join(hpos)) # debug
+		
+		# add missing positions at N end
+		fpos=0
+		try:
+			while hpos[fpos]=='?': fpos+=1
+		except IndexError:
+			pass
+		else:
+			hep = itertools.cycle('gfedcba')
+			while not next(hep) == hpos[fpos]: pass
+			fadd = [next(hep) for i in range(fpos)][::-1]
+			hpos = fadd + hpos[fpos:]
+		
+		#print("".join(hpos))  # debug
+		
+		# add missing positions at C end
+		epos=len(hpos)-1
+		try:
+			while hpos[epos]=='?': epos-=1
+		except IndexError:
+			hpos.extend(['?', '?'])
+		else:
+			hep = itertools.cycle('abcdefg')
+			while not next(hep) == hpos[epos]: pass
+			eadd = [next(hep) for i in range(len(self.res)-epos-1)]
+			hpos = hpos[:epos+1] + eadd
+		
+		#print("".join(hpos))  # debug
+		
+		assert len(hpos) == len(self.res)
+		
+		# store assigned heptad positions in the object 
+		if self.ap:
+			hpos = hpos[::-1]
+		self.positions = hpos
+			
+		# Old approach:
+		#angles = gen_expected_crick_angles(P, REP, optimal_ph1)
+		#self.positions = ['?'] + [crick_to_pos(c, angles)[1] for c in self.crick[1:-1]] + ['?']
 
 	def calc_crickdev(self, P, REP, optimal_ph1=19.5, smooth=False):
+		"""
+		Calculates Crick Angle deviation.
+		
+		Arguments:
+			P (int): bundle periodicity
+			REP (int): repeat length
+		"""
 
 		#FIXME add docs, clean debug print statements
 
