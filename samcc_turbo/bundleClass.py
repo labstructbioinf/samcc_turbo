@@ -4,6 +4,7 @@ plt.switch_backend('SVG')
 import seaborn as sns
 import itertools
 import pandas as pd
+import warnings
 
 from . import layerClass, residueClass, chainClass
 #DEV
@@ -130,10 +131,10 @@ class bundleClass():
 		for c in self.chains:
 			c.calc_axialshift()
 
-	def assign_positions(self, P, PER, ideal_ph1):
-		"""Assign heptad (or other repat type) positions in all chains."""
+	def assign_positions(self):
+		"""Assign heptad positions using TWISTER algorithm."""
 		for c in self.chains:
-			c.assign_positions(P, PER, ideal_ph1)
+			c.assign_positions()
 
 
 	def write_helical_axes(self, filename):
@@ -244,7 +245,7 @@ class bundleClass():
 			self.chains[pos] = chainClass(self.chains[pos], chains_ap[pos], chains_names[pos], chains_heptad[pos])
 			self.chains[pos].calc_axis()
 
-	def gendf(self, cols=['radius', 'crick', 'P', 'shift', 'crdev', 'heptads', 'p']):
+	def gendf(self, cols=['radius', 'crick', 'P', 'shift', 'crdev', 'heptads', 'p', 'positions']):
 		"""Generates pandas df containg all bundle parameters."""
 
 		index, data = [], []
