@@ -41,8 +41,6 @@ class chainClass():
 		#FIXME add docs, explain smooth parameter, clean dev
 
 		temp_axis = get_local_axis([i.Ca for i in self.res])
-		# print('len residues', len(self.res)) [DEV]
-		# print('temp axis', len(temp_axis)) [DEV]
 
 		if smooth:
 			self.axis = [temp_axis[0]] + [np.sum(w[0]+Vector(w[1]._ar*2)+w[2])**(1.0/4) for w in window(temp_axis, n=3)] + [temp_axis[-1]]
@@ -283,17 +281,17 @@ class chainClass():
 
 	def assign_positions(self):
 		"""Assigns heptad positions using TWISTER algorithm."""
-		
+
 		hpos=['?', '?']
 		pos = 2
-		
+
 		if self.ap:
 			crick = self.crick[::-1]
 		else:
 			crick = self.crick
-		
+
 		while pos < len(self.res)-2:
-							
+
 			if crick[pos-1] < 0 and crick[pos] > 0 and abs(crick[pos-1]) > abs(crick[pos]):
 				hpos.extend(['a', 'b', 'c'])
 				pos+=3
@@ -303,12 +301,12 @@ class chainClass():
 			else:
 				hpos.append('?')
 				pos+=1
-				
+
 
 		hpos = hpos[:len(self.res)-2]
 
 		#print("".join(hpos)) # debug
-		
+
 		# add missing positions at N end
 		fpos=0
 		try:
@@ -320,9 +318,9 @@ class chainClass():
 			while not next(hep) == hpos[fpos]: pass
 			fadd = [next(hep) for i in range(fpos)][::-1]
 			hpos = fadd + hpos[fpos:]
-		
+
 		#print("".join(hpos))  # debug
-		
+
 		# add missing positions at C end
 		epos=len(hpos)-1
 		try:
@@ -334,16 +332,16 @@ class chainClass():
 			while not next(hep) == hpos[epos]: pass
 			eadd = [next(hep) for i in range(len(self.res)-epos-1)]
 			hpos = hpos[:epos+1] + eadd
-		
+
 		#print("".join(hpos))  # debug
-		
+
 		assert len(hpos) == len(self.res)
-		
-		# store assigned heptad positions in the object 
+
+		# store assigned heptad positions in the object
 		if self.ap:
 			hpos = hpos[::-1]
 		self.positions = hpos
-			
+
 		# Old approach:
 		#angles = gen_expected_crick_angles(P, REP, optimal_ph1)
 		#self.positions = ['?'] + [crick_to_pos(c, angles)[1] for c in self.crick[1:-1]] + ['?']
@@ -351,7 +349,7 @@ class chainClass():
 	def calc_crickdev(self, P, REP, optimal_ph1=19.5, smooth=False):
 		"""
 		Calculates Crick Angle deviation.
-		
+
 		Arguments:
 			P (int): bundle periodicity
 			REP (int): repeat length

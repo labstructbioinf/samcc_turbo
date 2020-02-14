@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-plt.switch_backend('SVG') 
+plt.switch_backend('SVG')
 import seaborn as sns
 import itertools
 import pandas as pd
@@ -293,7 +293,6 @@ class bundleClass():
 		plt.subplots_adjust(hspace=0.5)
 
 		colgen = itertools.cycle('gbmr')
-
 
 		for e in elements:
 			for chain, color in zip(self.chains, colgen):

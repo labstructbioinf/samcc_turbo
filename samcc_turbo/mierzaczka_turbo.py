@@ -108,6 +108,7 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 			bundle.calc_crick()
 			bundle.calc_crickdev(3.5, 7, optimal_ph1=19.5)
 			bundle.calc_axialshift()
+			bundle.assign_positions()
 			if plot: # make plot and save it to file
 				bundle.plot(pdbid + '.png', elements=['Periodicity', 'Radius', 'CrickDev', 'Shift'])
 
@@ -132,6 +133,7 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 		bundle.calc_crick()
 		bundle.calc_crickdev(3.5, 7, optimal_ph1=19.5)
 		bundle.calc_axialshift()
+		bundle.assign_positions()
 
 		if plot: # make plot and save it to file
 			bundle.plot(pdbid + '.png', elements=['Periodicity', 'Radius', 'CrickDev', 'Shift'])
