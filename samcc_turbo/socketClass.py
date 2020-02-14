@@ -17,10 +17,6 @@ from .chainClass import chainClass
 from .bundleClass import bundleClass
 from .layerClass import layerClass
 from Bio.PDB import PDBParser
-from .layer_detection import detect_helix_order, find_bundle_boundry_layer_universal, find_bundle_boundry_layer_universal_object
-from .layer_detection import find_closest_CA_to_point
-from .layer_detection import find_CA_coresponding_to_point
-from .layer_detection import find_all_layers_from_layer
 from .layer_detection import select_minimal_distance_layer_set
 from .layer_detection import select_minimal_angle_layer_set
 from .layer_detection import create_pymol_selection_from_socket_results
