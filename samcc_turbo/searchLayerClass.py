@@ -479,6 +479,6 @@ class searchLayer():
 			for axis_point2 in self.axis_points:
 				# if (axis_point1.helix_id != axis_point2.helix_id):
 				if (axis_point1.helix_id, axis_point2.helix_id) in neighbour_interactions:
-					total_distance += distance.euclidean(axis_point1.CA_coords, axis_point2.CA_coords)
+					total_distance += distance.euclidean(axis_point1.coords, axis_point2.coords)
 
 		return total_distance
