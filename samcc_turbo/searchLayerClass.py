@@ -13,17 +13,24 @@ class NotEqualAxisLen(Exception):
 class helixAxisBundleClass():
 	### class for storing all helices axis
 
-	def __init__(self, chains, mode='from_chain', neighbour_interactions=None, ppo=None, average_dist_angle=None):
+	def __init__(self, chains, mode='from_chain', neighbour_interactions=None, ppo=None, average_dist_angle=None,
+				 average_layers_dist=None, average_dist_to_plane=None, ranks=0):
 		if mode == 'from_chain':
 			self.helix_axis_all = [ helixAxisClass(helix_axis, helix_id=helix_id) for helix_id, helix_axis in enumerate(chains) ]
 			self.neighbour_interactions = neighbour_interactions
 			self.ppo = ppo
 			self.average_dist_angle = average_dist_angle
+			self.average_layers_dist = average_layers_dist
+			self.average_dist_to_plane = average_dist_to_plane
+			self.ranks = ranks
 		elif mode == 'from_slice':
 			self.helix_axis_all = chains
 			self.neighbour_interactions = neighbour_interactions
 			self.ppo = ppo
 			self.average_dist_angle = average_dist_angle
+			self.average_layers_dist = average_layers_dist
+			self.average_dist_to_plane = average_dist_to_plane
+			self.ranks = ranks
 
 	def __getitem__(self, index):
 		# return new helixAxisBundleClass object but truncated
@@ -36,7 +43,8 @@ class helixAxisBundleClass():
 				helix_axis_sliced.append(helixAxisClass([ p for p in helix_axis.axis_points if p.distance_flag ][index]))
 
 			return helixAxisBundleClass(helix_axis_sliced, mode='from_slice', neighbour_interactions=self.neighbour_interactions,
-										ppo=self.ppo, average_dist_angle=self.average_dist_angle)
+										ppo=self.ppo, average_dist_angle=self.average_dist_angle, average_layers_dist=self.average_layers_dist,
+										average_dist_to_plane=self.average_dist_to_plane, ranks=self.ranks)
 
 		#FIXME this returns just one helixAxisClass object (= one full chain)
 		#FIXME probably shold return just one layer? this behaviour should be undefined probably
@@ -75,7 +83,8 @@ class helixAxisBundleClass():
 			helix_axis_sliced.append(helixAxisClass(points_flag[middle_point - int(slice_size/2):middle_point + int(slice_size/2)]))
 
 		return helixAxisBundleClass(helix_axis_sliced, mode='from_slice', neighbour_interactions=self.neighbour_interactions,
-									ppo=self.ppo, average_dist_angle=self.average_dist_angle)
+									ppo=self.ppo, average_dist_angle=self.average_dist_angle, average_layers_dist=self.average_layers_dist,
+									average_dist_to_plane=self.average_dist_to_plane, ranks=self.ranks)
 
 	def convert_to_coords_list(self):
 		"""Return list of lists[helix axis] of lists[point coords]
@@ -320,6 +329,11 @@ class helixAxisBundleClass():
 				pts_after  = 0
 				pt_found   = False
 				for axis_point in helix_axis:
+
+					# chyba bez sensu przycina tylko do distance_flag=True, niech idzie do gory i dolu na caly obszar
+					# to wymaga chyba zmiany API lancuchow tak by podawaly rowniez czesc oflagowana dystansowo
+					# w kazdym razie mozna dolaczyc reszty na koncowkach lancucha (dla nich nie da sie policzyc osi ale bylyby i tak odrzucane przy samcc)
+
 					if axis_point.distance_flag == False:
 						continue
 					if axis_point.point_id == layer_point.point_id:
@@ -343,11 +357,12 @@ class helixAxisBundleClass():
 				idx_stop  = layer_point.point_id + max_downstream + 1
 				helix_axis_sliced.append(helix_axis[idx_start:idx_stop])
 			layer_sets.append(helixAxisBundleClass(helix_axis_sliced, mode='from_slice', neighbour_interactions=self.neighbour_interactions,
-												   ppo=self.ppo, average_dist_angle=self.average_dist_angle))
+												   ppo=self.ppo, average_dist_angle=self.average_dist_angle, average_layers_dist=self.average_layers_dist,
+												   average_dist_to_plane=self.average_dist_to_plane, ranks=self.ranks))
 
 		return layer_sets
 
-	def verify_points_distances(self):
+	def verify_points_distances(self, max_distance=20):
 		# flag axis points that does not meet distance criteria
 		# code verifying if all helix axis points have any axis points from other helix within reasonable distance (20A) [dev-doc]
 		# this code compares all vs all axis points from all helices
@@ -363,9 +378,10 @@ class helixAxisBundleClass():
 						for point2 in helix_axis2.axis_points:
 							if (any(point1.CA_coords) and any(point2.CA_coords)):
 								dst = distance.euclidean(point1.CA_coords, point2.CA_coords)
-								if dst < 20:
+								if dst < max_distance:
 									# found residue within cutoff distance on this helix, break and search next helix
 									point_stat.append(True)
+									# print(point1, point2, dst)
 									break
 						else:
 							# there is no residue within cutoff distance on this helix, search next one
@@ -382,6 +398,9 @@ class helixAxisBundleClass():
 		print('Bundle of', len(self.helix_axis_all), 'axis')
 		print('Helix order:', self.neighbour_interactions)
 		print('Average distance/angle of layers:', self.average_dist_angle)
+		print('Average total distance of layers:', self.average_layers_dist)
+		print('Average distance to plane of points in layers:', self.average_dist_to_plane)
+		print('Layer set aggregated rank:', self.ranks)
 		for hid, helix in enumerate(self.helix_axis_all):
 			print('Axis', hid)
 			for r in helix.axis_points:
@@ -441,7 +460,7 @@ class searchLayer():
 		self.total_distance = self.calculate_total_distance(neighbour_interactions)
 
 	def __repr__(self):
-		return 'Layer with tot dist: {0:.2f}  Point ids: {1}'.format(self.total_distance, str([ p.point_id for p in self.axis_points ]))
+		return 'Layer# Tot dist: {0:.2f}  Point ids: {1} Res ids: {2}'.format(self.total_distance, str([ p.point_id for p in self.axis_points ]), str([ p.res.get_id()[1] for p in self.axis_points ]))
 
 	def __getitem__(self, index):
 		return self.axis_points[index]
@@ -458,6 +477,7 @@ class searchLayer():
 
 		for axis_point1 in self.axis_points:
 			for axis_point2 in self.axis_points:
+				# if (axis_point1.helix_id != axis_point2.helix_id):
 				if (axis_point1.helix_id, axis_point2.helix_id) in neighbour_interactions:
 					total_distance += distance.euclidean(axis_point1.CA_coords, axis_point2.CA_coords)
 
