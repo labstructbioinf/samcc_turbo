@@ -163,6 +163,92 @@ def find_best_fit_line_to_helices_CAs(helices_CA, mode, res_num_layer_detection=
 	if mode == 'socket':
 		return compute_helix_axis_and_layer_points_SOCKET(helices_CA_array, res_num_layer_detection_asserted)
 
+def select_minimal_angle_layer_set2(layers_sets, best_layer_nb=1):
+
+	def check_layers_shape(layers_set):
+
+		def calculate_plane_equation_from_points(points):
+			# DEVEL - if works then store with rest of imports
+			import scipy.optimize
+			import functools
+
+			def plane(x, y, params):
+				a = params[0]
+				b = params[1]
+				c = params[2]
+				z = a*x + b*y + c
+				return z
+
+			def error(params, points):
+				result = 0
+				for (x,y,z) in points:
+					plane_z = plane(x, y, params)
+					diff = abs(plane_z - z)
+					result += diff**2
+				return result
+
+			def cross(a, b):
+				return [a[1]*b[2] - a[2]*b[1],
+						a[2]*b[0] - a[0]*b[2],
+						a[0]*b[1] - a[1]*b[0]]
+
+			fun = functools.partial(error, points=points)
+			params0 = [0, 0, 0]
+			res = scipy.optimize.minimize(fun, params0)
+
+			return res
+
+		def calculate_angle_between_planes(plane1, plane2, silent_warning=True):
+
+			''' calculate angle between two planes defined with equation ax+bx+cx+d '''
+			''' cos = |a1a2 + b1b2 + c1c2| / (sqrt(a1^2 + b1^2 + c1^2) * sqrt(a2^2 + b2^2 + c2^2)) '''
+			''' input: (plane1/2) plane equation in form of dicionary where keys correspond to coefficients of equation '''
+			''' output: angle between planes in degrees (float) '''
+
+			numerator  = abs(sum([ plane1[coef]*plane2[coef] for coef in 'abc' ]))
+			len_plane1 = np.sqrt(sum([ np.power(plane1[coef], 2) for coef in 'abc' ]))
+			len_plane2 = np.sqrt(sum([ np.power(plane2[coef], 2) for coef in 'abc' ]))
+
+			cos_phi    = numerator / (len_plane1 * len_plane2)
+			if (1+1e-8 > cos_phi > 1.0):
+				cos_phi = 1.0
+				if not silent_warning:
+					print('Warning: calculated cosine slightly beyound function codomain(max 1e-8 beyound) - corrected to 1.0.')
+			phi_deg    = np.rad2deg(np.arccos(cos_phi))
+
+			return phi_deg
+
+		layer_equations = []
+		layer_angles    = []
+
+		for layer in layers_set.iterlayer():
+
+			points = [ tuple(point.coords) for point in layer ]
+
+			plane_equation = calculate_plane_equation_from_points(points)
+			layer_equations.append({'a':plane_equation.x[0], 'b':plane_equation.x[1], 'c':plane_equation.x[2]})
+
+		for layer in range(len(layer_equations)-1):
+			# calculate angle between two planes
+			layer_angles.append(calculate_angle_between_planes(layer_equations[layer], layer_equations[layer+1]))
+
+		layers_set.average_dist_angle = np.median(layer_angles) #FIXME np.mean(layer_angles)
+		print('V2', layers_set.average_dist_angle)
+
+		return layers_set
+
+	# this will return same layer sets list but with layers with set avg angle attribute
+	layer_set_angles = (list(map(check_layers_shape, layers_sets)))
+
+	if best_layer_nb == 1:
+		best_layer_set_angle = min(layer_set_angles, key=attrgetter('average_dist_angle'))
+	elif best_layer_nb == 'rank':
+		best_layer_set_angle = sorted(layer_set_angles, key=attrgetter('average_dist_angle'))
+	else:
+		best_layer_set_angle = heapq.nsmallest(best_layer_nb, layer_set_angles, key=attrgetter('average_dist_angle'))
+
+	return best_layer_set_angle
+
 def select_minimal_angle_layer_set(layers_sets, best_layer_nb=1):
 
 	#FIXME format docstring, clean from devel code, rewrite docs for new code
@@ -227,7 +313,7 @@ def select_minimal_angle_layer_set(layers_sets, best_layer_nb=1):
 			layer_angles.append(calculate_angle_between_planes(layer_equations[layer], layer_equations[layer+1]))
 
 		layers_set.average_dist_angle = np.median(layer_angles) #FIXME np.mean(layer_angles)
-		# print(layers_set.average_dist_angle)
+		# print('V1', layers_set.average_dist_angle)
 
 		return layers_set
 

@@ -21,7 +21,7 @@ from .bundleClass import bundleClass
 from .layerClass import layerClass
 from Bio.PDB import PDBParser
 from .layer_detection import select_minimal_distance_layer_set
-from .layer_detection import select_minimal_angle_layer_set
+from .layer_detection import select_minimal_angle_layer_set2, select_minimal_angle_layer_set
 from .layer_detection import create_pymol_selection_from_socket_results
 from .layer_detection import select_minimal_total_distance_layer_set
 from .layer_detection import select_minimal_dist_to_plane_layer_set
@@ -353,7 +353,7 @@ class socket_class():
 					# set of possible best layers in form of list of searchLayer
 					# if list is empty then increment search scope
 					for helices_pts in [helices_pts_first, helices_pts_middle, helices_pts_last]:
-					# for helices_pts in [helices_pts_middle]:
+					# for helices_pts in [helices_pts_first, helices_pts_middle]:
 						boundry_layers += helices_pts.find_bundle_boundry_layer(distance_threshold=distance_threshold_set, search_layer_setting_num=search_layer_setting_num)
 
 
@@ -400,9 +400,10 @@ class socket_class():
 				# all other cases
 				else:
 					best_layer_set = select_minimal_angle_layer_set(layers_sets, best_layer_nb=1)
+					# best_layer_set = select_minimal_angle_layer_set2(layers_sets, best_layer_nb=1)
 					# check 3 params and get layer with min(rank, rank, rank) [devel-idea]
 					# layers_sets = select_minimal_angle_layer_set(layers_sets, best_layer_nb='rank')
-					# layers_sets = select_minimal_total_distance_layer_set(layers_sets, best_layer_nb='rank')
+					# best_layer_set = select_minimal_total_distance_layer_set(layers_sets, best_layer_nb=1)
 					# layers_sets = select_minimal_dist_to_plane_layer_set(layers_sets, best_layer_nb='rank')
 					# best_layer_set = get_layers_set_with_best_ranks(layers_sets)
 
