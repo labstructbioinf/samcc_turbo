@@ -1,6 +1,9 @@
 # DEV
 from . import helper_functions, chainClass, layer_detection, bundleClass, searchLayerClass
+from operator import attrgetter
+import numpy as np
 import importlib
+import heapq
 importlib.reload(helper_functions)
 importlib.reload(chainClass)
 importlib.reload(layer_detection)
@@ -20,6 +23,10 @@ from Bio.PDB import PDBParser
 from .layer_detection import select_minimal_distance_layer_set
 from .layer_detection import select_minimal_angle_layer_set
 from .layer_detection import create_pymol_selection_from_socket_results
+from .layer_detection import select_minimal_total_distance_layer_set
+from .layer_detection import select_minimal_dist_to_plane_layer_set
+from .layer_detection import get_layers_set_with_best_ranks
+from .layer_detection import find_closest_CA_to_point
 
 ### Exceptions
 
@@ -267,12 +274,14 @@ class socket_class():
 		elif mode == 'auto-detect':
 
 			for input_helices in parse_socket():
-				if DEBUG:
-					print('IH', input_helices)
-					print('LEN IH', len(input_helices))
+				#if DEBUG:
+				# print('IH', input_helices)
+				# print('LEN IH', len(input_helices))
 
 				try:
 					chains = parse_pdb(input_helices, self.pdb_filename)
+					# for c in chains:
+					# 	print(c)
 				except NoResidue:
 					print('No residue error')
 					continue
@@ -280,6 +289,7 @@ class socket_class():
 				#FIXME clean from devel, add short description how detection works
 
 				# assign distance_threshold according to oligomerization state
+				#default_distance_threshold = {2:30, 3:40, 4:50, 5:60, 6:70, 7:80, 8:90, 9:100}
 				default_distance_threshold = {2:30, 3:40, 4:50, 5:60, 6:70, 7:80, 8:90, 9:100}
 				if distance_threshold == 'auto':
 					distance_threshold_set = default_distance_threshold[len(input_helices)]
@@ -291,11 +301,11 @@ class socket_class():
 					c.calc_axis(smooth=False)
 
 				# get list of CA coords for all chains(helices)
-				helices_CA = [c.get_CA() for c in chains]
-				if DEBUG:
-					print('Helices CA')
-					for h in helices_CA:
-						print(len(h))
+				# helices_CA = [c.get_CA() for c in chains]
+				# if DEBUG:
+				# 	print('Helices CA')
+				# 	for h in helices_CA:
+				# 		print(len(h))
 				# helices_CA is list of helices, each is list of CA coords (Biopython objects) [dev-doc]
 
 				# equivalent of "find_best_fit_line_to_helices_CAs"
@@ -309,9 +319,13 @@ class socket_class():
 				# initialize axis bundle from chain axis points
 				helices_axis_all = helixAxisBundleClass(chains)
 
+
+				# helices_axis_all.show_points()
+				# print('====='*15)
+
 				# flag axis points that are too far away from other points
-				helices_axis_all.verify_points_distances()
-				#print(helices_axis_all.show_points())
+				helices_axis_all.verify_points_distances(max_distance=20)
+				# helices_axis_all.show_points()
 
 				# initialize boundry_layers list and search scope
 				boundry_layers                   = []
@@ -339,7 +353,9 @@ class socket_class():
 					# set of possible best layers in form of list of searchLayer
 					# if list is empty then increment search scope
 					for helices_pts in [helices_pts_first, helices_pts_middle, helices_pts_last]:
+					# for helices_pts in [helices_pts_middle]:
 						boundry_layers += helices_pts.find_bundle_boundry_layer(distance_threshold=distance_threshold_set, search_layer_setting_num=search_layer_setting_num)
+
 
 					# increase scope of searched residues
 					# INCREMENT - to activate multiloop uncomment next line and comment out four following lines
@@ -350,9 +366,30 @@ class socket_class():
 						res_num_layer_detection_asserted = 15
 					# INCREMENT END
 
+				# convert boundry_layers layers to closest-CA (this might work better with ap bundles)
+				# boundry_layers = find_closest_CA_to_point(boundry_layers, helices_axis_all)
+
 				# find all layers from designated layers
 				# return list of helixAxisBundleClass objects truncated by defined first layers
+
+				# merge all boundry layers into one list - but only selected ones
+				percentile_threshold = np.percentile([ bl.total_distance for bl in boundry_layers ], 25)
+				boundry_layers       = [ bl for bl in boundry_layers if bl.total_distance < percentile_threshold ]
+				#boundry_layers = heapq.nsmallest(res_num_layer_detection_asserted, boundry_layers, key=attrgetter('total_distance'))
+
 				layers_sets = helices_axis_all.find_all_layers_from_layer(boundry_layers)
+				# for bl in boundry_layers:
+				# 	print(bl)
+				# print('====='*15)
+				#layers_sets = [layers_sets[0]]
+
+				# first make filter for tot distance of layers based on given boundry layer
+				# best_layer_set_distances  = select_minimal_total_distance_layer_set(layers_sets)
+				# best_layer_set_dist2plane = select_minimal_dist_to_plane_layer_set(layers_sets)
+				# for layer_set in best_layer_set_distances:
+				# 	layer_set.show_points()
+				# layers_sets = best_layer_set_distances
+				# layers_sets = best_layer_set_dist2plane
 
 				# select best layer set (for dimer and trimer+)
 				# function should be keep outside of class
@@ -362,12 +399,28 @@ class socket_class():
 					best_layer_set = select_minimal_distance_layer_set(layers_sets)
 				# all other cases
 				else:
-					best_layer_set = select_minimal_angle_layer_set(layers_sets)
+					best_layer_set = select_minimal_angle_layer_set(layers_sets, best_layer_nb=1)
+					# check 3 params and get layer with min(rank, rank, rank) [devel-idea]
+					# layers_sets = select_minimal_angle_layer_set(layers_sets, best_layer_nb='rank')
+					# layers_sets = select_minimal_total_distance_layer_set(layers_sets, best_layer_nb='rank')
+					# layers_sets = select_minimal_dist_to_plane_layer_set(layers_sets, best_layer_nb='rank')
+					# best_layer_set = get_layers_set_with_best_ranks(layers_sets)
+
+				#best_layer_set = select_minimal_total_distance_layer_set(layers_sets)[0]
+
+				# for ls in layers_sets:
+				# 	print(ls.average_dist_angle)
+				# 	print(ls.average_dist_to_plane)
+
+				# best_layer_set.show_points()
+
 
 				# convert best layer set to bundleClass()
+				# -1/+1 to chain indexes to accomodate fact that chain edges are excluded from layer search
+				# this is because it is not possible to calculate helix axis points for edge residues
 				for c, b in zip(chains, best_layer_set.iterchain()):
-					cut_start = b[0].point_id # id of first residue in best layer chain
-					cut_stop  = b[-1].point_id # id of last residue in best layer chain
+					cut_start = b[0].point_id -1 # id of first residue in best layer chain
+					cut_stop  = b[-1].point_id +1 # id of last residue in best layer chain
 					c.res = c.res[cut_start:cut_stop]
 					c.axis = c.axis[cut_start:cut_stop]
 
@@ -385,7 +438,20 @@ class socket_class():
 				for layer_residues in zip(*[c.res for c in bundle.chains]):
 					bundle.layers.append(layerClass(layer_residues))
 
+				# show selected set [dev]
+				# for ha, ih in zip(best_layer_set[:].iterchain(), input_helices):
+				# 	if ih[3]:
+				# 		print([ha[-1].res.get_id()[1], ha[0].res.get_id()[1], ih[2], ih[3]])
+				# 	else:
+				# 		print([ha[0].res.get_id()[1], ha[-1].res.get_id()[1], ih[2], ih[3]])
+
+
 				# generate pymol-readable selection
+				# yellow layers between helices: all residues indicated by best_layer_set [dev-docs]
+				# red helices coloring: all residues within reasonable distance from other helices (axisPoint.distance_flag=True) [dev-docs]
+				# FIXME: blue helices coloring: all residues indictaed by Socket as CC but excluded because of distance_flag=False [dev-docs]
+				# green: all other residues in a structure [dev-docs]
+
 				# this will cut range of shown helices to the residues that are within resonable distance from all other helices
 				# it does not affect range of drawn layers in pymol
 				input_helices_cut = []
@@ -396,6 +462,9 @@ class socket_class():
 						input_helices_cut.append([ha[0].res.get_id()[1], ha[-1].res.get_id()[1], ih[2], ih[3]])
 				if DEBUG:
 					print('pymol session data', input_helices_cut)
+
+				# helices_axis_all.show_points()
+				# print('pymol session data', input_helices_cut)
 				input_helices = input_helices_cut
 
 				#FIXME pymol session in final version should indicate Socket detected region and show layer bars in actually measured layers (from bundleClass chains)

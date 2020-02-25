@@ -163,7 +163,7 @@ def find_best_fit_line_to_helices_CAs(helices_CA, mode, res_num_layer_detection=
 	if mode == 'socket':
 		return compute_helix_axis_and_layer_points_SOCKET(helices_CA_array, res_num_layer_detection_asserted)
 
-def select_minimal_angle_layer_set(layers_sets):
+def select_minimal_angle_layer_set(layers_sets, best_layer_nb=1):
 
 	#FIXME format docstring, clean from devel code, rewrite docs for new code
 	#FIXME rebuild to accomodate searchLayerClass - done
@@ -226,14 +226,20 @@ def select_minimal_angle_layer_set(layers_sets):
 			# calculate angle between two planes
 			layer_angles.append(calculate_angle_between_planes(layer_equations[layer], layer_equations[layer+1]))
 
-		layers_set.average_dist_angle = np.mean(layer_angles)
+		layers_set.average_dist_angle = np.median(layer_angles) #FIXME np.mean(layer_angles)
+		# print(layers_set.average_dist_angle)
 
 		return layers_set
 
 	# this will return same layer sets list but with layers with set avg angle attribute
 	layer_set_angles = (list(map(check_layers_shape, layers_sets)))
 
-	best_layer_set_angle = min(layer_set_angles, key=attrgetter('average_dist_angle'))
+	if best_layer_nb == 1:
+		best_layer_set_angle = min(layer_set_angles, key=attrgetter('average_dist_angle'))
+	elif best_layer_nb == 'rank':
+		best_layer_set_angle = sorted(layer_set_angles, key=attrgetter('average_dist_angle'))
+	else:
+		best_layer_set_angle = heapq.nsmallest(best_layer_nb, layer_set_angles, key=attrgetter('average_dist_angle'))
 
 	return best_layer_set_angle
 
@@ -316,6 +322,141 @@ def convert_to_bundleClass_format(samcc_selection):
 
 	return input_helices
 
+def select_minimal_dist_to_plane_layer_set(layers_sets, best_layer_nb=1):
+
+	def check_layers_dist_to_plane(layers_set):
+
+		def calculate_plane_equation_from_points(x, y, z):
+			a = np.column_stack((x, y, z))
+			return np.linalg.lstsq(a, np.ones_like(x), rcond=None)[0]
+
+		def calculate_point_to_plane_distance(plane_equation, point):
+
+			# plane coefficients
+			A = plane_equation[0]
+			B = plane_equation[1]
+			C = plane_equation[2]
+
+			# point coords
+			x = point.coords[0]
+			y = point.coords[1]
+			z = point.coords[2]
+
+			numerator   = abs(A*x + B*y + C*z)
+			denominator = np.sqrt(A**2 + B**2 + C**2)
+
+			return numerator / denominator
+
+		layer_distances = []
+
+		for layer in layers_set.iterlayer():
+
+			x = [ point.coords[0] for point in layer ] # all x coords from layer
+			y = [ point.coords[1] for point in layer ]
+			z = [ point.coords[2] for point in layer ]
+
+			plane_equation  = calculate_plane_equation_from_points(x,y,z)
+			points_in_layer = []
+			for point in layer:
+				points_in_layer.append(calculate_point_to_plane_distance(plane_equation, point))
+
+			layer_distances.append(np.mean(points_in_layer))
+
+		layers_set.average_dist_to_plane = np.mean(layer_distances)
+
+		return layers_set
+
+	layer_set_dist_to_plane = (list(map(check_layers_dist_to_plane, layers_sets)))
+
+	if best_layer_nb == 1:
+		best_layer_set_dist_to_plane = min(layer_set_dist_to_plane, key=attrgetter('average_dist_to_plane'))
+	elif best_layer_nb == 'rank':
+		best_layer_set_dist_to_plane = sorted(layer_set_dist_to_plane, key=attrgetter('average_dist_to_plane'))
+	else:
+		best_layer_set_dist_to_plane = heapq.nsmallest(best_layer_nb, layer_set_dist_to_plane, key=attrgetter('average_dist_to_plane'))
+
+	return best_layer_set_dist_to_plane
+
+def select_minimal_total_distance_layer_set(layers_sets, best_layer_nb=1):
+
+	def check_layers_total_distances(layers_set):
+
+		def calculate_total_distance(layer, neighbour_interactions):
+			"""Calculate total distance between neighbouring points in layer
+			neighbourhood is determined according to neighbour_interactions list
+			"""
+
+			total_distance = 0
+
+			for axis_point1 in layer:
+				for axis_point2 in layer:
+					if (axis_point1.helix_id, axis_point2.helix_id) in neighbour_interactions:
+						total_distance += distance.euclidean(axis_point1.CA_coords, axis_point2.CA_coords)
+
+			return total_distance
+
+		layers_all_distances = []
+		for layer in layers_set.iterlayer():
+			layers_all_distances.append(calculate_total_distance(layer, layers_set.neighbour_interactions))
+
+		layers_set.average_layers_dist = np.mean(layers_all_distances)
+
+		return layers_set
+
+	layer_set_total_distances = list(map(check_layers_total_distances, layers_sets))
+
+	if best_layer_nb == 1:
+		best_layer_set_total_distances = min(layer_set_total_distances, key=attrgetter('average_layers_dist'))
+	elif best_layer_nb == 'rank':
+		best_layer_set_total_distances = sorted(layer_set_total_distances, key=attrgetter('average_layers_dist'))
+	else:
+		best_layer_set_total_distances = heapq.nsmallest(best_layer_nb, layer_set_total_distances, key=attrgetter('average_layers_dist'))
+
+	return best_layer_set_total_distances
+
+def get_layers_set_with_best_ranks(layers_sets):
+
+	best_layer_set_angle = sorted(layers_sets, key=attrgetter('average_dist_angle'))
+	best_layer_set_dist_to_plane = sorted(layers_sets, key=attrgetter('average_dist_to_plane'))
+	best_layer_set_total_distances = sorted(layers_sets, key=attrgetter('average_layers_dist'))
+
+	for pos, layer_set in enumerate(best_layer_set_angle):
+		layer_set.ranks += pos
+	# for pos, layer_set in enumerate(best_layer_set_dist_to_plane):
+	# 	layer_set.ranks += pos
+	for pos, layer_set in enumerate(best_layer_set_total_distances):
+		layer_set.ranks += pos
+
+	return min(layers_sets, key=attrgetter('ranks'))
+
+def find_closest_CA_to_point(boundry_layers, helices_axis_all):
+
+	def get_closest_CA_to_axis_point(point, helix_pts):
+
+		helix_point = helix_pts[0]
+		dst_best    = distance.euclidean(helix_pts[0].CA_coords, point.coords)
+		for helix_pt in helix_pts:
+			dst = distance.euclidean(helix_pt.CA_coords, point.coords)
+			print(dst_best, dst)
+			if dst < dst_best:
+				helix_point = helix_pt
+				dst_best    = dst
+		print('DST-BEST', dst_best)
+		return helix_point
+
+	boundry_layers_CA = []
+
+	for layer, helix_axis in zip(boundry_layers, helices_axis_all):
+		layer_adjusted = []
+		for point in layer:
+			closest_CA_helix_point = get_closest_CA_to_axis_point(point, [helix_axis[point.point_id+i] for i in range(-2,3) if point.point_id+i>0])
+			print('PT-found', closest_CA_helix_point.point_id)
+			print('PT', point)
+			layer_adjusted.append(closest_CA_helix_point)
+		layer.axis_points = layer_adjusted
+		boundry_layers_CA.append(layer)
+
+	return boundry_layers_CA
 
 # DELETE ONCE sure it is not needed (at least one scan run with this)
 #

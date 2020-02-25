@@ -114,6 +114,7 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 
 			if save_df: # dump pickle with dataframe of measured values
 				pickle.dump(bundle.gendf(), open(pdbpath.split('.')[0] + '_coil_' + str(bid) + '.p', 'wb'))
+				bundle.gendf()
 
 			#FIXME bundle_axis parameter is temporary unless accepted as production feature
 			#FIXME is it necessarry to give bundle atributes here? - should work with only True/False; function is method of bundleClass and can get from self atributes
@@ -134,6 +135,8 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 		bundle.calc_crickdev(3.5, 7, optimal_ph1=19.5)
 		bundle.calc_axialshift()
 		bundle.assign_positions()
+
+		print(bundle.gendf())
 
 		if plot: # make plot and save it to file
 			bundle.plot(pdbid + '.png', elements=['Periodicity', 'Radius', 'CrickDev', 'Shift'])

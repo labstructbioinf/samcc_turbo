@@ -63,7 +63,6 @@ class bundleClass():
 		for c in self.chains:
 			self.helices_axis.append(c.axis)
 
-
 	def calc_pitch_angle(self):
 
 		#FIXME add docs
@@ -135,7 +134,6 @@ class bundleClass():
 		"""Assign heptad positions using TWISTER algorithm."""
 		for c in self.chains:
 			c.assign_positions()
-
 
 	def write_helical_axes(self, filename):
 
@@ -209,7 +207,6 @@ class bundleClass():
 
 
 		return self.from_defdata(filename, chains, chains_names, chains_ap, chains_heptad)
-
 
 	def from_defdata(self, filename, chains, chains_names, chains_ap, chains_heptad):
 
@@ -394,7 +391,7 @@ class bundleClass():
 		#layer_points = [ layer.get_layer_CA() for layer in self.layers ]
 		# plot layers by axis points
 		layer_points = [ layer.get_layer_axis() for layer in self.layers if (len(layer.get_layer_axis()) == len(layer.res)) ]
-		#FIXME why there is difference in number of points per layer?
+		#FIXME why there is difference in number of points per layer? not sure if this fix still valid
 		if DEBUG:
 			print('layers')
 			for l in self.layers:
