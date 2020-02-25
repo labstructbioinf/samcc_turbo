@@ -130,7 +130,7 @@ class chainClass():
 		else:
 			self.P = [None]+[r.P for r in self.res[1:-1]]+[None]
 
-	def calc_crick(self):
+	def calc_crick(self, fix_Crick=True):
 
 		#FIXME add docs, if "old approach" no longer needed: delete, consider more meaningful varaible names
 
@@ -186,20 +186,23 @@ class chainClass():
 		self.res[0].crick=None
 		self.res[-1].crick=None
 
+		if not fix_Crick: f_problem = []
+		
 		#iterate over potentially problematic Crick angles
 		for fp in f_problem:
 
-			# new approach
-
 			expected = []
-
+			
 			# calculate w1 values in the neighbouring residue pairs
 			if fp>2:
 				expected.append(abs(diffangle(self.res[fp-1].crick, self.res[fp-2].crick)))
 			if fp<len(self.res)-3:
 				expected.append(abs(diffangle(self.res[fp+1].crick, self.res[fp+2].crick)))
+				
+			if len(expected)==0: continue
+				
 			expected = np.mean(expected)
-
+			
 			current = []
 			alternative = []
 
@@ -212,7 +215,6 @@ class chainClass():
 
 			if max(np.absolute(current - expected)) > max(np.absolute(alternative - expected)):
 				self.res[fp].crick = -self.res[fp].crick
-				#print("fix!")
 
 			# old approach
 			"""

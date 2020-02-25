@@ -101,10 +101,10 @@ class bundleClass():
 	"""
 
 
-	def calc_crick(self):
+	def calc_crick(self, fix_Crick=True):
 		"""Calculates Crick's angles for all chains in a bundle."""
 		for c in self.chains:
-			c.calc_crick()
+			c.calc_crick(fix_Crick=fix_Crick)
 
 	def calc_crickdev(self, P, REP, optimal_ph1=19.5, smooth=False):
 		#FIXME minor: variable names
