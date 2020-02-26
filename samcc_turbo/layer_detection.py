@@ -329,6 +329,12 @@ def select_minimal_angle_layer_set(layers_sets, best_layer_nb=1):
 
 	return best_layer_set_angle
 
+def find_bundle_boundry_layer_from_all(boundry_layers, distance_threshold, search_layer_setting_num):
+
+	min_distance_set = heapq.nsmallest(search_layer_setting_num, boundry_layers)
+
+	return [ layer for layer in min_distance_set if layer.total_distance <= distance_threshold ]
+
 def select_minimal_distance_layer_set(layers_sets):
 
 	#FIXME rewrite to use new idea for dimers: cast on plane and measure angles between lines connecting helices

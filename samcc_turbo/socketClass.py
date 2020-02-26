@@ -22,6 +22,7 @@ from .layerClass import layerClass
 from Bio.PDB import PDBParser
 from .layer_detection import select_minimal_distance_layer_set
 from .layer_detection import select_minimal_angle_layer_set2, select_minimal_angle_layer_set
+from .layer_detection import find_bundle_boundry_layer_from_all
 from .layer_detection import create_pymol_selection_from_socket_results
 from .layer_detection import select_minimal_total_distance_layer_set
 from .layer_detection import select_minimal_dist_to_plane_layer_set
@@ -347,14 +348,24 @@ class socket_class():
 						helices_pts_middle.show_points()
 						helices_pts_last.show_points()
 
-					#helices_pts_first.show_points() #FIXME devel-code
+					# helices_pts_first.show_points() #FIXME devel-code
 
 					# find bundle boundry layer (min distance layer)
 					# set of possible best layers in form of list of searchLayer
 					# if list is empty then increment search scope
+
+
+
 					for helices_pts in [helices_pts_first, helices_pts_middle, helices_pts_last]:
 					# for helices_pts in [helices_pts_first, helices_pts_middle]:
-						boundry_layers += helices_pts.find_bundle_boundry_layer(distance_threshold=distance_threshold_set, search_layer_setting_num=search_layer_setting_num)
+						boundry_layers += helices_pts.get_all_bundle_boundry_layers()
+					boundry_layers = find_bundle_boundry_layer_from_all(boundry_layers, distance_threshold=distance_threshold_set, search_layer_setting_num=search_layer_setting_num)
+
+					# old non-merge version, delete to production
+					# for helices_pts in [helices_pts_first, helices_pts_middle, helices_pts_last]:
+					# # for helices_pts in [helices_pts_first, helices_pts_middle]:
+					# 	boundry_layers += helices_pts.find_bundle_boundry_layer(distance_threshold=distance_threshold_set, search_layer_setting_num=search_layer_setting_num)
+					# end-del
 
 
 					# increase scope of searched residues
@@ -372,8 +383,13 @@ class socket_class():
 				# find all layers from designated layers
 				# return list of helixAxisBundleClass objects truncated by defined first layers
 
+				# print('===BEFORE===')
+				# for bl in boundry_layers:
+				# 	print(bl)
+				# print('====='*15)
+
 				# merge all boundry layers into one list - but only selected ones
-				percentile_threshold = np.percentile([ bl.total_distance for bl in boundry_layers ], 25)
+				percentile_threshold = np.percentile([ bl.total_distance for bl in boundry_layers ], 50)
 				boundry_layers       = [ bl for bl in boundry_layers if bl.total_distance < percentile_threshold ]
 				#boundry_layers = heapq.nsmallest(res_num_layer_detection_asserted, boundry_layers, key=attrgetter('total_distance'))
 

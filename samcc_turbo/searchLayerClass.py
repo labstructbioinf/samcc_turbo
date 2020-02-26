@@ -292,6 +292,12 @@ class helixAxisBundleClass():
 		self.neighbour_interactions = neighbour_interactions_list[best_order]
 		self.ppo = ppo
 
+	def get_all_bundle_boundry_layers(self):
+		"""Only get list of searchLayers - do not evaluate best ones at this point
+		"""
+
+		return [ searchLayer(l, self.neighbour_interactions) for l in itertools.product(*self.helix_axis_all, repeat=1) ]
+
 	def find_bundle_boundry_layer(self, distance_threshold, search_layer_setting_num):
 
 		#FIXME format docstrings, clean from devel code
