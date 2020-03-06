@@ -8,6 +8,8 @@ from .helper_functions import crick_to_pos
 from .helper_functions import calc_crick_ang_dev
 from .helper_functions import savitzky_golay
 
+from collections import deque
+
 class chainClass():
 	""" """
 	#FIXME add docs
@@ -347,8 +349,67 @@ class chainClass():
 		# Old approach:
 		#angles = gen_expected_crick_angles(P, REP, optimal_ph1)
 		#self.positions = ['?'] + [crick_to_pos(c, angles)[1] for c in self.crick[1:-1]] + ['?']
+		
+		
+
 
 	def calc_crickdev(self, P, REP, optimal_ph1=19.5, smooth=False):
+	
+		angles = gen_expected_crick_angles(P, REP, optimal_ph1)
+		posnames = [chr(97+i) for i in range(len(angles))]
+
+		g = deque(zip(angles, posnames))
+		
+		best_fit=1000000
+
+		for i in range(len(g)):
+			unpack_g = np.asarray(list(g))
+					
+			heptad_cycle = itertools.cycle(unpack_g[:,0].astype(float))
+			
+			measured_circk = [r.crick for r in self.res[1:-1]]
+			exp_crick = [next(heptad_cycle) for _ in range(len(measured_circk))]
+			
+			if self.ap:
+				exp_crick = exp_crick[::-1]
+			
+			crdev = calc_crick_ang_dev(measured_circk, exp_crick, 0, len(self.res)-2, force_start_Cr_ang_pos=0)[0]
+			
+			fit = np.mean([abs(i) for i in crdev])
+			
+			if fit < best_fit:
+				best_crdev = crdev		
+				posname_cycle = itertools.cycle(unpack_g[:,1].astype(str))
+				best_posnames = [next(posname_cycle) for _ in range(len(best_crdev)+1)]
+				
+				first_name = ord(best_posnames[0])-1
+				if first_name<97:
+					assert first_name==96
+					first_name = posnames[-1]
+				else:
+					first_name = chr(first_name)
+					
+				best_posnames = [first_name] + best_posnames
+				
+				if self.ap:
+					best_posnames = best_posnames[::-1]
+				best_fit = fit
+			
+			g.rotate(1)
+			
+		if smooth:
+			self.crdev = [None]+list(savitzky_golay(best_crdev,5,1))+[None]
+		else:
+			self.crdev = [None]+best_crdev+[None]
+			
+		self.heptads = best_posnames
+
+		for pos, i in enumerate(self.crdev):
+			self.res[pos].crdev = i
+			
+		
+
+	def calc_crickdev_old(self, P, REP, optimal_ph1=19.5, smooth=False):
 		"""
 		Calculates Crick Angle deviation.
 
@@ -357,27 +418,31 @@ class chainClass():
 			REP (int): repeat length
 		"""
 
-		#FIXME add docs, clean debug print statements
-
 		angles = gen_expected_crick_angles(P, REP, optimal_ph1)
-
-		# no starting heptad position was defined. define it based on the Crick angle
+		
+		# No starting heptad for index=0 (no data!) was defined. Define it based on the Crick angle
 		if self.heptad == 'x':
-			start_Cr_ang_pos, name, _ = crick_to_pos(self.res[1].crick, angles)
+		
+			ref_crick = self.res[1].crick
+			ref_crick_pos = 1
+			
+			if abs(ref_crick)>=165:
+				#print(ref_crick, self.res[2].crick)
+				ref_crick = self.res[2].crick
+				ref_crick_pos = 2				
+		
+			start_Cr_ang_pos, name, _ = crick_to_pos(ref_crick, angles)
 			if not self.ap:
-				hpos = start_Cr_ang_pos-1
+				hpos = start_Cr_ang_pos-ref_crick_pos
 			else:
-				hpos = start_Cr_ang_pos+1
-
-			if hpos<0: hpos=REP-1
-			if hpos==REP: hpos=0
-
-			#print('debug !!!!!', start_Cr_ang_pos, name, hpos, self.ap, REP)
-
+				hpos = start_Cr_ang_pos+ref_crick_pos
+				
+			if hpos<0: hpos=REP+hpos  # was -1 -> +hpos
+			if hpos>=REP: hpos=hpos-REP   # was == -> >=  ; 0 -> hpos-REP
 		else:
 			hpos = ord(self.heptad)-97
-
-		# define heptad positions for each residue
+		
+		# Define heptad positions for all residues
 		heptads = ""
 		h = hpos
 		for _ in range(len(self.res)):
@@ -388,7 +453,7 @@ class chainClass():
 			else:
 				h+=1
 				if h==REP: h = 0
-
+		
 		self.heptads = list(heptads)
 
 		hep2angle = dict([(chr(l+97), a) for l,a in enumerate(angles)])
@@ -404,12 +469,13 @@ class chainClass():
 			hpos = 0
 
 		heptad = chr(hpos+97)
-
+		
 		exp_ahelix_crick = gen_expected_crick_angles(P, REP, hep2angle[heptad], ap=self.ap)
-
+		
 		crdev = calc_crick_ang_dev([r.crick for r in self.res[1:-1]], exp_ahelix_crick, 0, len(self.res)-2,\
 										   force_start_Cr_ang_pos=0)[0]
-
+										   
+		
 		if smooth:
 			self.crdev = [None]+list(savitzky_golay(crdev,5,1))+[None]
 		else:

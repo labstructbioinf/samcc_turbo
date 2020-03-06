@@ -5,6 +5,8 @@ import seaborn as sns
 import itertools
 import pandas as pd
 import warnings
+from Bio.PDB.StructureBuilder import StructureBuilder 
+from Bio.PDB import PDBIO
 
 from . import layerClass, residueClass, chainClass
 #DEV
@@ -136,10 +138,9 @@ class bundleClass():
 			c.assign_positions()
 
 	def write_helical_axes(self, filename):
+		"""Writes helical axes in PDB format."""
 
-		#FIXME is this function used? del or docs+var names
-
-		sb = StructureBuilder.StructureBuilder()
+		sb = StructureBuilder()
 		sb.init_structure('')
 		sb.init_model('')
 

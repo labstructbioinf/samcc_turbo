@@ -275,9 +275,9 @@ class socket_class():
 		elif mode == 'auto-detect':
 
 			for input_helices in parse_socket():
-				#if DEBUG:
-				# print('IH', input_helices)
-				# print('LEN IH', len(input_helices))
+				if DEBUG:
+					print('IH', input_helices)
+					print('LEN IH', len(input_helices))
 
 				try:
 					chains = parse_pdb(input_helices, self.pdb_filename)
@@ -436,10 +436,11 @@ class socket_class():
 				# -1/+1 to chain indexes to accomodate fact that chain edges are excluded from layer search
 				# this is because it is not possible to calculate helix axis points for edge residues
 				for c, b in zip(chains, best_layer_set.iterchain()):
+					#print(c,b)
 					cut_start = b[0].point_id -1 # id of first residue in best layer chain
 					cut_stop  = b[-1].point_id +1 # id of last residue in best layer chain
-					c.res = c.res[cut_start:cut_stop]
-					c.axis = c.axis[cut_start:cut_stop]
+					c.res = c.res[cut_start:cut_stop+1]
+					c.axis = c.axis[cut_start:cut_stop+1]
 
 				bundle = bundleClass()
 
