@@ -327,6 +327,7 @@ class socket_class():
 				# flag axis points that are too far away from other points
 				helices_axis_all.verify_points_distances(max_distance=20)
 				# helices_axis_all.show_points()
+				# print('====='*15)
 
 				# initialize boundry_layers list and search scope
 				boundry_layers                   = []
@@ -343,10 +344,10 @@ class socket_class():
 					helices_pts_last   = helices_axis_all[-res_num_layer_detection_asserted:]
 					helices_pts_middle = helices_axis_all.get_middle_points(res_num_layer_detection_asserted)
 
-					if DEBUG:
-						helices_pts_first.show_points()
-						helices_pts_middle.show_points()
-						helices_pts_last.show_points()
+					# if DEBUG:
+					# helices_pts_first.show_points()
+					# helices_pts_middle.show_points()
+					# helices_pts_last.show_points()
 
 					# helices_pts_first.show_points() #FIXME devel-code
 
@@ -394,6 +395,7 @@ class socket_class():
 				#boundry_layers = heapq.nsmallest(res_num_layer_detection_asserted, boundry_layers, key=attrgetter('total_distance'))
 
 				layers_sets = helices_axis_all.find_all_layers_from_layer(boundry_layers)
+				# print('BOUNDRY LAYERS')
 				# for bl in boundry_layers:
 				# 	print(bl)
 				# print('====='*15)

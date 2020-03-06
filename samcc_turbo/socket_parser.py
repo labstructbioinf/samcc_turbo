@@ -1,4 +1,4 @@
-"""Socket parser from lbs-tools - version from 11.10.19"""
+"""Socket parser from lbs-tools - version from 5.03.20"""
 
 import re
 import itertools
@@ -20,7 +20,7 @@ def parse_socket_output(filename, method='overlap'):
     # Read all lines from file
     try:
         f = open(filename, 'r')
-        lines = [line.rstrip() for line in f.readlines()]
+        lines = [line.rstrip('\n') for line in f.readlines()]
         f.close()
     except (OSError, FileNotFoundError):
         return 0
@@ -28,7 +28,7 @@ def parse_socket_output(filename, method='overlap'):
     # Get indices (numbers of first line in file) for each CC assignment
     start_indices = []
     for i in range(0, len(lines)):
-        line = lines[i].rstrip()
+        line = lines[i]
         if line.startswith('coiled coil') and line.endswith(':'):
             start_indices.append(i)
         if 'Finished' in line:
@@ -64,9 +64,9 @@ def parse_socket_output(filename, method='overlap'):
                 except ValueError:
                     coil_info['ambigous'] = True
                 coil_info['helix_ids'].append(helix_id)
-                seq_line = lines[k + 2].rstrip("\n")
-                register_line = lines[k + 3].rstrip("\n")
-                knobtype_line = lines[k + 5].rstrip("\n")
+                seq_line = lines[k + 2]
+                register_line = lines[k + 3]
+                knobtype_line = lines[k + 5]
                 seq = seq_line[9:]
                 if len(seq) != (end_res - start_res + 1):
                     coil_info['ambigous'] = True
@@ -84,7 +84,7 @@ def parse_socket_output(filename, method='overlap'):
                     right_marg1 = len(register) - len(register.rstrip())
                     right_marg2 = len(knobtype) - len(knobtype.rstrip('-'))
                     left_marg = min(left_marg1, left_marg2)
-                    right_marg = min(right_marg1, right_marg2)
+                    right_marg = max(right_marg1, right_marg2)
                 start_res = start_res + left_marg
                 end_res = end_res - right_marg
                 fseq = seq[left_marg:len(seq) - right_marg]

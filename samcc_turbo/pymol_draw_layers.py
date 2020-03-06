@@ -90,6 +90,16 @@ def save_layers_to_pymol(pdbpath, layer_points, savepath, suffix, pymol_version=
 	#pymol.cmd.show('cartoon')
 	pymol.cmd.remove('resn HOH')
 
+	# drawing options for paper
+	# pymol.cmd.set('cartoon_fancy_helices', 1)
+	# pymol.cmd.set('cartoon_fancy_sheets', 1)
+	# pymol.cmd.set('spec_reflect', 0)
+	# pymol.cmd.set('ray_trace_mode', 1)
+	# pymol.cmd.set('ray_shadow', 0)
+	# pymol.cmd.set('ray_trace_color', 'black')
+	# pymol.cmd.bg_color('white')
+	# pymol.cmd.set('cartoon_highlight_color', 'grey90')
+
 	print('Saving pymol session with layers...')
 	pymol.cmd.save(savepath + pdbname + '_' + suffix + '.pse', format='pse')
 

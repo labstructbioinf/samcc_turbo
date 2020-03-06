@@ -43,7 +43,7 @@ from .bundleClass import bundleClass
 def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 					plot=True, save_df=True, save_pse=True,
 					bin_paths={'dssp':'dssp', 'socket':'socket'},
-					layer_detect_n=5, max_dist='auto', search_set_n=3):
+					layer_detect_n=5, max_dist='auto', search_set_n=9):
 	"""Main function for running samcc-turbo.
 
 	Arguments (general):
@@ -114,7 +114,7 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 
 			if save_df: # dump pickle with dataframe of measured values
 				pickle.dump(bundle.gendf(), open(pdbpath.split('.')[0] + '_coil_' + str(bid) + '.p', 'wb'))
-				bundle.gendf()
+				# print(bundle.gendf())
 
 			#FIXME bundle_axis parameter is temporary unless accepted as production feature
 			#FIXME is it necessarry to give bundle atributes here? - should work with only True/False; function is method of bundleClass and can get from self atributes
