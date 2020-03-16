@@ -332,6 +332,9 @@ def select_minimal_angle_layer_set(layers_sets, best_layer_nb=1):
 def find_bundle_boundry_layer_from_all(boundry_layers, distance_threshold, search_layer_setting_num):
 
 	min_distance_set = heapq.nsmallest(search_layer_setting_num, boundry_layers)
+	
+	#for i in min_distance_set:
+	#	print(i.total_distance)
 
 	return [ layer for layer in min_distance_set if layer.total_distance <= distance_threshold ]
 

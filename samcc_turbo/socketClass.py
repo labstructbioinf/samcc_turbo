@@ -327,7 +327,6 @@ class socket_class():
 				# flag axis points that are too far away from other points
 				helices_axis_all.verify_points_distances(max_distance=20)
 				# helices_axis_all.show_points()
-				# print('====='*15)
 
 				# initialize boundry_layers list and search scope
 				boundry_layers                   = []
@@ -344,10 +343,10 @@ class socket_class():
 					helices_pts_last   = helices_axis_all[-res_num_layer_detection_asserted:]
 					helices_pts_middle = helices_axis_all.get_middle_points(res_num_layer_detection_asserted)
 
-					# if DEBUG:
-					# helices_pts_first.show_points()
-					# helices_pts_middle.show_points()
-					# helices_pts_last.show_points()
+					if DEBUG:
+						helices_pts_first.show_points()
+						helices_pts_middle.show_points()
+						helices_pts_last.show_points()
 
 					# helices_pts_first.show_points() #FIXME devel-code
 
@@ -360,6 +359,7 @@ class socket_class():
 					for helices_pts in [helices_pts_first, helices_pts_middle, helices_pts_last]:
 					# for helices_pts in [helices_pts_first, helices_pts_middle]:
 						boundry_layers += helices_pts.get_all_bundle_boundry_layers()
+						
 					boundry_layers = find_bundle_boundry_layer_from_all(boundry_layers, distance_threshold=distance_threshold_set, search_layer_setting_num=search_layer_setting_num)
 
 					# old non-merge version, delete to production
@@ -388,6 +388,8 @@ class socket_class():
 				# for bl in boundry_layers:
 				# 	print(bl)
 				# print('====='*15)
+				
+				assert len(boundry_layers)>0
 
 				# merge all boundry layers into one list - but only selected ones
 				percentile_threshold = np.percentile([ bl.total_distance for bl in boundry_layers ], 50)
@@ -395,7 +397,6 @@ class socket_class():
 				#boundry_layers = heapq.nsmallest(res_num_layer_detection_asserted, boundry_layers, key=attrgetter('total_distance'))
 
 				layers_sets = helices_axis_all.find_all_layers_from_layer(boundry_layers)
-				# print('BOUNDRY LAYERS')
 				# for bl in boundry_layers:
 				# 	print(bl)
 				# print('====='*15)
