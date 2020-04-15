@@ -102,10 +102,10 @@ class bundleClass():
 	"""
 
 
-	def calc_crick(self, fix_Crick=True):
-		"""Calculates Crick's angles for all chains in a bundle."""
+	def calc_crick(self):
+		"""Calculates Crick angles for all chains in the bundle."""
 		for c in self.chains:
-			c.calc_crick(fix_Crick=fix_Crick)
+			c.calc_crick()
 
 	def calc_crickdev(self, P, REP, optimal_ph1=19.5, smooth=False):
 		#FIXME minor: variable names
@@ -243,7 +243,7 @@ class bundleClass():
 			self.chains[pos] = chainClass(self.chains[pos], chains_ap[pos], chains_names[pos], chains_heptad[pos])
 			self.chains[pos].calc_axis()
 
-	def gendf(self, cols=['radius', 'crick', 'P', 'shift', 'crdev', 'heptads', 'p', 'positions']):
+	def gendf(self, cols=['radius', 'crick', 'P', 'shift', 'crdev', 'positions_twister', 'p', 'positions_samcc']):
 		"""Generates pandas df containg all bundle parameters."""
 
 		index, data = [], []

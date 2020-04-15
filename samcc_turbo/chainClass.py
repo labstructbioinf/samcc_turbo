@@ -131,10 +131,92 @@ class chainClass():
 				self.res[pos].P=i
 		else:
 			self.P = [None]+[r.P for r in self.res[1:-1]]+[None]
+				
+	def calc_crick(self):
+		"""Calculates Crick angles for the chain."""
+		
+		def ClosestPointOnLine(a, b, p):
+			ap = p-a
+			ab = b-a
+			result = a + np.dot(ap,ab)/np.dot(ab,ab) * ab
+			return result
+	
+		def angle(v1, v2):
+			return np.arccos(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)))
 
-	def calc_crick(self, fix_Crick=True):
+		for pos, r in enumerate(self.res[1:-1]):
+			realpos=pos+1
+			
+			isFirstLayer = realpos==1
+			isLastLayer = realpos==len(self.res)-2
+			
+			# parallel 
+			if not self.ap:
+				if isFirstLayer:
+					O_next = self.res[realpos+1].O.get_array()
+					C_next = self.res[realpos+1].C.get_array()
+				else:
+					O_next = self.res[realpos-1].O.get_array()
+					C_next = self.res[realpos-1].C.get_array()
+					
+			# anti-parallel 
+			else:
+				if isLastLayer:
+					O_next = self.res[realpos-1].O.get_array()
+					C_next = self.res[realpos-1].C.get_array()
+				else:
+					O_next = self.res[realpos+1].O.get_array()
+					C_next = self.res[realpos+1].C.get_array()
 
-		#FIXME add docs, if "old approach" no longer needed: delete, consider more meaningful varaible names
+			O = r.O.get_array()
+			Ca = r.Ca.get_array()
+			C = r.C.get_array()
+			
+			# Project Ca onto the helix axis (O_new)
+			O_new = ClosestPointOnLine(O, O_next, Ca)
+
+			# Define a plane perpendicular to the helix axis 
+			# and find intersection between this plane and the bundle axis (C_new)
+			n = O-O_new
+			V0 = O_new
+			w = C - O_new
+			u = C_next - C
+			N = -np.dot(n, w)
+			D = np.dot(n, u)
+			sI = N / D
+			C_new = C+ sI * u
+			
+			# Define sign of the Crick angle
+			mixed = np.dot(np.cross(O_next - O_new, Ca - O_new), C_new - O_new)
+			
+			if mixed<0:
+				sign=1
+			else:
+				sign=-1
+
+			if not self.ap:
+				if not isFirstLayer: sign = sign * -1
+			else:
+				if not isLastLayer: sign = sign * -1
+
+			r.crick = np.degrees(angle(Ca-O_new, C_new-O_new)) * sign
+			
+		self.res[0].crick=None
+		self.res[-1].crick=None	
+				
+		crick = [r.crick for r in self.res[1:-1]]
+		self.crick = [None]+crick+[None]			
+			
+			
+	def old_calc_crick(self, fix_Crick=True):
+
+		"""
+		Currently not used!
+		"""
+
+		pass
+		
+		"""
 
 		f_problem = []
 
@@ -151,7 +233,6 @@ class chainClass():
 			#Calculate the mixed product of vectors (O-Ca,O-C,O-Ox).
 			#Just consider the vector between the current helical axis point
 			#(O in your notation) and the next one (Ox).
-			#Calculate the mixed product of vectors (O-Ca,O-C,O-Ox).
 			#If the mixed product is negative, reverse the sign of the Crick angle
 			#(or vice versa, depending on definitions).
 
@@ -187,6 +268,8 @@ class chainClass():
 
 		self.res[0].crick=None
 		self.res[-1].crick=None
+		
+		print(f_problem)
 
 		if not fix_Crick: f_problem = []
 		
@@ -216,52 +299,13 @@ class chainClass():
 				alternative.append(abs(diffangle(-self.res[fp].crick, self.res[fp+1].crick)))
 
 			if max(np.absolute(current - expected)) > max(np.absolute(alternative - expected)):
+				print(fp, 'fixed!')
 				self.res[fp].crick = -self.res[fp].crick
-
-			# old approach
-			"""
-			expected = []
-			try:
-				expected.append(adjustangle(self.res[fp-2].crick - self.res[fp-1].crick))
-			except:
-				pass
-			try:
-				expected.append(adjustangle(self.res[fp+1].crick - self.res[fp+2].crick))
-			except:
-				pass
-			assert len(expected)>0
-			expected = np.mean(expected)
-
-			measured1 = []
-			try:
-				measured1.append(adjustangle(-self.res[fp].crick - self.res[fp+1].crick))
-			except:
-				pass
-			try:
-				measured1.append(adjustangle(self.res[fp-1].crick - (-self.res[fp].crick)))
-			except:
-				pass
-
-			measured2 = []
-			try:
-				measured2.append(adjustangle(self.res[fp].crick - self.res[fp+1].crick))
-			except:
-				pass
-			try:
-				measured2.append(adjustangle(self.res[fp-1].crick - (self.res[fp].crick)))
-			except:
-				pass
-
-			cha = np.mean(np.absolute(measured1-expected))
-			org = np.mean(np.absolute(measured2-expected))
-
-			if cha<org:
-				print("fix!")
-				self.res[fp].crick = -self.res[fp].crick
-			"""
 
 		crick = [r.crick for r in self.res[1:-1]]
 		self.crick = [None]+crick+[None]
+		
+		"""
 
 	def calc_pitch_angle(self):
 
@@ -344,7 +388,7 @@ class chainClass():
 		# store assigned heptad positions in the object
 		if self.ap:
 			hpos = hpos[::-1]
-		self.positions = hpos
+		self.positions_twister = hpos
 
 		# Old approach:
 		#angles = gen_expected_crick_angles(P, REP, optimal_ph1)
@@ -402,7 +446,7 @@ class chainClass():
 		else:
 			self.crdev = [None]+best_crdev+[None]
 			
-		self.heptads = best_posnames
+		self.positions_samcc = best_posnames
 
 		for pos, i in enumerate(self.crdev):
 			self.res[pos].crdev = i
