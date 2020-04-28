@@ -1,35 +1,5 @@
-### probably not needed imports
-# import sys, itertools, glob
-#
-# from math import factorial
-#
-# from Bio.PDB import StructureBuilder
-# from Bio.PDB import PDBIO
-# from Bio.SeqUtils import seq1
-#
-# from Bio.PDB import Vector
-
-# import warnings
-#import importlib ### DEV
-#importlib.reload(ld) ### DEV
-#importlib.reload(pdl) ### DEV
-# from io import StringIO
-### end old imports
-
-# master DEBUG switch
+### Main SamCC-Turbo file ###
 DEBUG=False
-
-
-### DEV
-from . import wrappers, socket_parser, socketClass, helper_functions, bundleClass
-import importlib
-importlib.reload(wrappers)
-importlib.reload(socket_parser)
-importlib.reload(socketClass)
-importlib.reload(bundleClass)
-importlib.reload(helper_functions)
-
-### END-DEV
 
 import pickle
 import sys
@@ -39,8 +9,7 @@ from .socket_parser import parse_socket_output
 from .socketClass import socket_class
 from .bundleClass import bundleClass
 
-
-def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
+def run_samcc_turbo(pdbpath, mode='auto-detect', defdata=None,
 					plot=True, save_df=True, save_pse=True,
 					bin_paths={'dssp':'dssp', 'socket':'socket'},
 					layer_detect_n=5, max_dist='auto', search_set_n=9):
@@ -52,8 +21,6 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 	           - auto-detect: automatic detection of layers in the bundle (requires
 	                          installed dssp and Socket)
 			   - defdata: use layer definition from list
-	           - deffile: use layer definition from file
-	deffile   -- path to file defining layers used in deffile mode (default None)
 	plot      -- plot results and also save plot to file (default True)
 	save_df   -- save result DataFrame to pickle (default True)
 	save_pse  -- save pymol session with drawn layers (default True)
@@ -62,8 +29,8 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 
 	Arguments (auto-detect mode specific):
 	layer_detect_n -- number of residues from each helix that will be combined
-					  into layers that will be considered in layer detection
-					  (default 5)
+					  into layers that will be considered in layer detection;
+					  (default 5) [this is "r" parameter in the paper]
 	max_dist       -- distance threshold [A] that will be used to indicate unusual
 					  layer setting; if total distance between residues in layer
 					  if greater that this number the layer will be discarded, if
@@ -72,19 +39,11 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 					  then threshold will be assigned basing on oligomerization
 					  (default auto)
 	search_set_n   -- number of starting layer settings that will be selected
-					  basing on minimal distance between residues to be compared
-					  in terms of angle between all layers in structure (default 3)
+					  basing on minimal distance between residues; they will be compared
+					  in terms of angle between all layers in structure (default 9)
 	Arguments (defdata mode specific):
 	defdata   -- list of parameters defining layer setting (default None)
 	"""
-
-	###DEV-TXT: minimalne użycie: mierzaczka(pdb) odpala dssp, socket, parsuje socket, mierzy, zwraca df, wykres i sesje pymol
-	###DEV-TXT: wersja 0.1A: użycie pliku definiującego helisy (stare samcc)
-	###DEV-TXT: wersja 0.2: kontrola parametrów: czy wykres, df, pymol, ścieżki
-	###DEV-TXT: v. 0.3: defdata mode, expert notebook  and most socketClass annotated with fixme
-	###DEV-TXT: v. 0.4: all fixes annotated
-
-	###DEV-TXT: wersja podająca bezpośrednio definicję (bez pliku)
 
 	# get pdbid
 	pdbid = pdbpath.split('/')[-1].split('.')[0]
@@ -96,7 +55,7 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 		socket_data    = parse_socket_output(socketpath)
 		s 			   = socket_class(socket_data, pdbpath)
 
-		bundles = s.get_bundles(mode=mode, res_num_layer_detection=layer_detect_n,
+		bundles = s.get_bundles(res_num_layer_detection=layer_detect_n,
 								distance_threshold=max_dist,
 								search_layer_setting_num=search_set_n)
 
@@ -113,11 +72,8 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 				bundle.plot(pdbid + '.png', elements=['Periodicity', 'Radius', 'CrickDev', 'Shift'])
 
 			if save_df: # dump pickle with dataframe of measured values
-				pickle.dump(bundle.gendf(), open(pdbpath.split('.')[0] + '_coil_' + str(bid) + '.p', 'wb'))
-				# print(bundle.gendf())
+				pickle.dump(bundle.gendf(), open(pdbpath.split('/')[-1].split('.')[0] + '_coil_' + str(bid) + '.p', 'wb'))
 
-			#FIXME bundle_axis parameter is temporary unless accepted as production feature
-			#FIXME is it necessarry to give bundle atributes here? - should work with only True/False; function is method of bundleClass and can get from self atributes
 			if save_pse:
 				bundle.pymol_plot_layer(filename=pdbpath ,savepath='/'.join(pdbpath.split('/')[:-1]), suffix='coil_' + str(bid),
 										pymol_version=2.0, color_selection=True, helix_order=bundle.helix_order, helices_axis=bundle.helices_axis)
@@ -136,27 +92,15 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', deffile=None, defdata=None,
 		bundle.calc_axialshift()
 		bundle.assign_positions()
 
-		print(bundle.gendf())
-
 		if plot: # make plot and save it to file
 			bundle.plot(pdbid + '.png', elements=['Periodicity', 'Radius', 'CrickDev', 'Shift'])
 
 		if save_df: # dump pickle with dataframe of measured values
-			pickle.dump(bundle.gendf(), open(pdbpath.split('.')[0] + '_coil.p', 'wb'))
+			pickle.dump(bundle.gendf(), open(pdbpath.split('/')[-1].split('.')[0] + '_coil.p', 'wb'))
 
 		if save_pse:
 			bundle.pymol_plot_layer(filename=pdbpath ,savepath='/'.join(pdbpath.split('/')[:-1]), suffix='coil',
 									pymol_version=2.0, color_selection=True, helix_order=bundle.helix_order, helices_axis=bundle.helices_axis)
 
-	elif mode == 'deffile':
-		#FIXME add behaviour for definition file
-		print('Not supported yet.')
-		sys.exit(-1) # devel
-
-		if deffile == None:
-			print('Please provide file with bundle definition for measurement.')
-			sys.exit(-1)
-
 	else:
-		#FIXME add behaviour for unknown mode
-		print('Unknown mode.')
+		print('Unknown mode. Available modes: auto-detect and defdata')

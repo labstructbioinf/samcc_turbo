@@ -1,10 +1,10 @@
-
-
-
-###FIXME is this module still used? many functions look like they are in other files
-
 import pandas as pd
-import sys, os, math, time, glob, itertools
+import sys
+import os
+import math
+import time
+import glob
+import itertools
 import numpy as np
 from Bio.PDB.PDBParser import PDBParser
 import matplotlib.pyplot as plt

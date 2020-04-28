@@ -1,35 +1,20 @@
 import numpy as np
 import matplotlib.pyplot as plt
-plt.switch_backend('SVG')
 import seaborn as sns
 import itertools
 import pandas as pd
 import warnings
-from Bio.PDB.StructureBuilder import StructureBuilder 
+from Bio.PDB.StructureBuilder import StructureBuilder
 from Bio.PDB import PDBIO
-
-from . import layerClass, residueClass, chainClass
-#DEV
-import importlib
-from . import pymol_draw_layers
-importlib.reload(layerClass)
-importlib.reload(pymol_draw_layers)
-#
-from .pymol_draw_layers import save_layers_to_pymol
 from Bio.PDB import PDBParser
 from .layerClass import layerClass
 from .residueClass import residueClass
 from .chainClass import chainClass
-
-# DEV
-from .mierzaczka_turbo import DEBUG
-#
+from .pymol_draw_layers import save_layers_to_pymol
+#plt.switch_backend('SVG')
 
 class bundleClass():
-	"""
-	"""
-
-	#FIXME add docs
+	"""Class describing single bundle of the structure"""
 
 	def __init__(self):
 		self.layers = []
@@ -39,18 +24,12 @@ class bundleClass():
 		self.ppo = []
 
 	def calc_bundleaxis(self):
-
-		#FIXME add docs
+		"""Calculate axis of entire bundle"""
 
 		axis=[]
 
 		for l in self.layers[1:-1]:
 			res_in_layer = [r.O for r in l.res]
-			if DEBUG:
-				print('res in layer')
-				print(res_in_layer)
-				print('res in layer sum', np.sum(res_in_layer))
-				print('res in layer sum power', np.sum(res_in_layer) ** (1.0/len(self.chains)))
 			C = np.sum(res_in_layer) ** (1.0/len(self.chains))
 			for r in l.res:
 				r.C = C
@@ -59,58 +38,25 @@ class bundleClass():
 		self.axis = [None]+axis+[None]
 
 	def get_helicesaxis(self):
-
-		#FIXME docs
+		"""Get axis of individual helices"""
 
 		for c in self.chains:
 			self.helices_axis.append(c.axis)
 
 	def calc_pitch_angle(self):
-
-		#FIXME add docs
+		"""Calculate pitch angle"""
 
 		for c in self.chains:
 			c.calc_pitch_angle()
 
-	#FIXME if not needed anymore: delete
-	"""
-	def calc_pitch(self):
-
-		### Calculate the bundle rise per residue (H)
-		self.H=[None]
-		for realpos in range(1, len(self.axis)-1):
-			temp_H = []
-			for other in [1, -1]:
-				if self.axis[realpos+other] != None:
-					temp_H.append((self.axis[realpos+other] - self.axis[realpos]).norm())
-
-			self.H.append(np.mean(temp_H))
-		self.H.append([None])
-
-		### Calculate the helical pitch (angle between bundle axis and helix axis)
-
-		self.pitch = [None]
-		for pos, l in enumerate(self.layers[1:-1]):
-			realpos=pos+1
-			w0 = np.mean([r.w0 for r in l.res])
-			self.pitch.append(self.H[realpos] * ( (2 * np.pi) / w0 ))
-
-			print(self.H[realpos], w0, self.H[realpos] * ( (2 * np.pi) / w0 ))
-
-		self.pitch.append([None])
-
-	"""
-
-
 	def calc_crick(self):
 		"""Calculates Crick angles for all chains in the bundle."""
+
 		for c in self.chains:
 			c.calc_crick()
 
 	def calc_crickdev(self, P, REP, optimal_ph1=19.5, smooth=False):
-		#FIXME minor: variable names
-		"""
-		calculates Crick's angle deviations for all chains in a bundle
+		"""Calculates Crick's angle deviations for all chains in a bundle
 		P - periodicity (e.g. 3.5 for 7/2)
 		REP - repeat length (eg. 7 for 7/2)
 		"""
@@ -156,70 +102,12 @@ class bundleClass():
 		io.set_structure(sb.structure)
 		io.save(filename)
 
-	def from_deffile(self, deffile):
-
-		#FIXME elaborate on deffile format
-
-		"""
-		Reads bundle based on classic SamCC definition file.
-
-		Arguments:
-
-			deffile: name of the definition file.
-
-		Example input:
-
-			deffile:
-
-			/path/to/pdb/file/file.pdb
-			A,11,29,a
-			A,60,42,c
-			A,106,88,f
-			A,117,135,e
-
-
-		"""
-		f=deffile
-
-		filename=f.readline().strip()
-		line=f.readline().strip()
-
-		chains=[]
-		chains_names = []
-		chains_ap = []
-		chains_heptad = []
-
-		while line:
-			chain, fr, to, heptad = line.split(',')
-			chains_heptad.append(heptad)
-			fr,to=int(fr), int(to)
-			if fr<to:
-				chains.append(range(fr,to+1))
-				chains_ap.append(False)
-			else:
-				chains.append(range(fr,to-1,-1))
-				chains_ap.append(True)
-
-			while chain in chains_names:
-				chain += "'"
-			chains_names.append(chain)
-
-			line=f.readline().strip()
-
-
-		return self.from_defdata(filename, chains, chains_names, chains_ap, chains_heptad)
-
 	def from_defdata(self, filename, chains, chains_names, chains_ap, chains_heptad):
-
-		#FIXME is this function still used?
-
-		"""
-			Reads bundle based on provided parameters.
+		"""Reads bundle based on provided parameters.
 
 			Arguments:
 
 				filename: name of the PDB file
-
 		"""
 
 		parser=PDBParser()
@@ -275,7 +163,7 @@ class bundleClass():
 
 	def plot(self, filename="", elements=[]):
 
-		#FIXME add docs, maybe improve function names
+		"""Plot data measured by the layer"""
 
 		assert len(elements)>1
 		assert type(elements)==list
@@ -345,16 +233,8 @@ class bundleClass():
 					axes[a].set_xlabel(r'Position in the sequence', fontsize=AXESFONTSIZE)
 			a+=1
 
-		#plt.xticks(np.arange(1,len(self.layers)-1,1))
-
 		for ax in axes:
 			ax.xaxis.set_ticks(np.arange(0,len(self.layers)-2,1))
-
-			#empty_string_labels = ['']*len(self.layers)
-			#ax.set_xticklabels(empty_string_labels)
-
-			#for tick in ax.xaxis.get_major_ticks():
-			#	tick.label.set_fontsize(TICKFONTSIZE)
 
 			for tick in ax.yaxis.get_major_ticks():
 				tick.label.set_fontsize(TICKFONTSIZE)
@@ -365,12 +245,7 @@ class bundleClass():
 			plt.savefig(filename, dpi=150)
 
 	def pymol_plot_layer(self, filename, savepath, suffix, pymol_version, color_selection=False, helix_order=False, helices_axis=None):
-
-		#FIXME format docstring, clean from devel comments
-		#FIXME bundle_axis temp (see mierzaczka_turbo.py)
-
-		"""
-		Save layers to pymol session.
+		"""Save layers to pymol session.
 
 		Arguments:
 			filename: path to pdb file
@@ -389,20 +264,9 @@ class bundleClass():
 		else:
 			h_order = None
 
-		#layer_points = [ layer.get_layer_CA() for layer in self.layers ]
 		# plot layers by axis points
 		layer_points = [ layer.get_layer_axis() for layer in self.layers if (len(layer.get_layer_axis()) == len(layer.res)) ]
-		#FIXME why there is difference in number of points per layer? not sure if this fix still valid
-		if DEBUG:
-			print('layers')
-			for l in self.layers:
-				print( l.get_layer_axis_temp() )
 
-		if DEBUG:
-			print('bundle axis')
-			print(self.axis)
-
-		#FIXME bundle_axis temp
 		if color_selection:
 			save_layers_to_pymol(filename, layer_points, savepath, suffix, pymol_version, color_selection=self.pymol_selection,
 								 helix_order=h_order, ppo=self.ppo, bundle_axis=self.axis, helices_axis=self.helices_axis)

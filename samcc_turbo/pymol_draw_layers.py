@@ -2,12 +2,16 @@ def save_layers_to_pymol(pdbpath, layer_points, savepath, suffix, pymol_version=
 						 color_selection=False, helix_order=None, ppo=None, bundle_axis=False):
 	''' save each layer as a set of distances between point determining the layer '''
 
-	#FIXME clean from devel code, add docs
-
 	import __main__
 	__main__.pymol_argv = [ 'pymol', '-qc'] # Quiet and no GUI
 	import sys, time, os, itertools
-	import pymol
+	try:
+		import pymol
+	except ModuleNotFoundError:
+		import sys
+		print('Module pymol not found')
+		print('Pymol required to save pse files. Add pymol to your pythonpath or run SamCC-Turbo with save_pse=False flag')
+		sys.exit()
 
 	pymol.finish_launching()
 	pymol.cmd.reinitialize()
@@ -17,7 +21,6 @@ def save_layers_to_pymol(pdbpath, layer_points, savepath, suffix, pymol_version=
 	pymol.cmd.load(pdbpath, pdbname)
 
 	# this draws points that are used to find helix order
-	#print('PPO', ppo)
 	for p in enumerate(ppo):
 		pymol.cmd.pseudoatom('ppo_' + str(p[0]), pos=list(p[1]))
 
@@ -72,17 +75,6 @@ def save_layers_to_pymol(pdbpath, layer_points, savepath, suffix, pymol_version=
 				pymol.cmd.distance('l_' + str(layer[0]) + 'dist_' + str(dist[0]) + '_' + str(dist[1]), '/l_' + str(layer[0]) + 'point' + str(dist[0]) + '/////1', '/l_' + str(layer[0]) + 'point' + str(dist[1]) + '/////1')
 	### end layer creation
 
-
-	### alternate layer creation code - less entities in pymol
-	# for layer in enumerate(layer_points):
-	#     for point in enumerate(layer[1]):
-	#         pymol.cmd.pseudoatom('layer' + str(layer[0]) + 'pts', pos=point[1])
-	#
-	#     #pymol.cmd.distance('layer' + str(layer[0]) + 'dist', '/layer' + str(layer[0]) + 'pts' + '/////1', '/layer' + str(layer[0]) + 'pts' + '/////1')
-	#     pymol.cmd.distance('layer' + str(layer[0]) + 'dist', '/layer' + str(layer[0]) + 'pts' + '///1', '/layer' + str(layer[0]) + 'pts' + '///1')
-
-	### end layer creation
-
 	pymol.cmd.set('dash_gap', 0)
 	pymol.cmd.set('dash_radius', 0.2)
 	pymol.cmd.hide('labels')
@@ -90,18 +82,7 @@ def save_layers_to_pymol(pdbpath, layer_points, savepath, suffix, pymol_version=
 	#pymol.cmd.show('cartoon')
 	pymol.cmd.remove('resn HOH')
 
-	# drawing options for paper
-	# pymol.cmd.set('cartoon_fancy_helices', 1)
-	# pymol.cmd.set('cartoon_fancy_sheets', 1)
-	# pymol.cmd.set('spec_reflect', 0)
-	# pymol.cmd.set('ray_trace_mode', 1)
-	# pymol.cmd.set('ray_shadow', 0)
-	# pymol.cmd.set('ray_trace_color', 'black')
-	# pymol.cmd.bg_color('white')
-	# pymol.cmd.set('cartoon_highlight_color', 'grey90')
-
 	print('Saving pymol session with layers...')
-	pymol.cmd.save(savepath + pdbname + '_' + suffix + '.pse', format='pse')
+	pymol.cmd.save(savepath + '/' + pdbname + '_' + suffix + '.pse', format='pse')
 
-	#pymol.cmd.quit()
 	print(pdbname + ' saved.')

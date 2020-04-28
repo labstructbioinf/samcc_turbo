@@ -1,8 +1,3 @@
-# DEV
-from . import mierzaczka_turbo
-import importlib
-importlib.reload(mierzaczka_turbo)
-# END-DEV
-
+### Init for samcc_turbo package ###
 
 from .mierzaczka_turbo import run_samcc_turbo

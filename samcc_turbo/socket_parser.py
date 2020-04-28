@@ -1,4 +1,4 @@
-"""Socket parser from lbs-tools - version from 5.03.20"""
+### Socket parser from localpdb - version from 5.03.20 ###
 
 import re
 import itertools

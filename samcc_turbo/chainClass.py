@@ -1,18 +1,17 @@
-from .bundle import get_local_axis
 import numpy as np
 import itertools
-from Bio.PDB import calc_dihedral, vector_to_axis
+from Bio.PDB import calc_dihedral
+from Bio.PDB import vector_to_axis
+from collections import deque
+from .bundle import get_local_axis
 from .helper_functions import diffangle
 from .helper_functions import gen_expected_crick_angles
 from .helper_functions import crick_to_pos
 from .helper_functions import calc_crick_ang_dev
 from .helper_functions import savitzky_golay
 
-from collections import deque
-
 class chainClass():
-	""" """
-	#FIXME add docs
+	"""Class describing single chain (helix) of the structure"""
 
 	def __init__(self, residues, ap, chain, heptad='x'):
 		self.res = residues
@@ -26,7 +25,7 @@ class chainClass():
 		return "%s [%s-%s]" % (self.chain, self.res[0].res.id[1], self.res[-1].res.id[1])
 
 	def get_seq(self):
-		# FIXME add docs, more meaningful variable names
+		"""Get chain sequence"""
 
 		s = "".join([seq1(r.res.resname) for r in self.res])
 		if self.ap: s=s[::-1]
@@ -40,7 +39,7 @@ class chainClass():
 		return [r.Ca for r in self.res]
 
 	def calc_axis(self, smooth=False):
-		#FIXME add docs, explain smooth parameter, clean dev
+		"""Calculate axis"""
 
 		temp_axis = get_local_axis([i.Ca for i in self.res])
 
@@ -56,10 +55,7 @@ class chainClass():
 			self.res[pos].O = ax
 
 	def calc_radius(self):
-		"""
-		Calculates distance between helical axis points and bundle axis points
-		"""
-		#FIXME: elaborate what is stored in self.radius
+		"""Calculates distance between helical axis points and bundle axis points"""
 
 		for pos in range(1, len(self.res)-1):
 			self.res[pos].radius = (self.res[pos].O - self.res[pos].C).norm()
@@ -71,15 +67,12 @@ class chainClass():
 		self.radius = [None]+radius+[None]
 
 	def calc_periodicity(self, smooth=False, helix_p=3.63):
-		"""
-		Calculates bundle periodicity from the perspective of a helix
+		"""Calculates bundle periodicity from the perspective of a helix
 
 		Arguments:
 			helix_p: None - use local helix periodicity for caluclations
 				     value - use a given fixed value of helix periodicity (default=3.63; alpha-helix periodicity)
 		"""
-
-		#FIXME maybe add explanation what w1, w0 variables are
 
 		for pos, r in enumerate(self.res[1:-1]):
 			# real position in the array
@@ -131,26 +124,26 @@ class chainClass():
 				self.res[pos].P=i
 		else:
 			self.P = [None]+[r.P for r in self.res[1:-1]]+[None]
-				
+
 	def calc_crick(self):
 		"""Calculates Crick angles for the chain."""
-		
+
 		def ClosestPointOnLine(a, b, p):
 			ap = p-a
 			ab = b-a
 			result = a + np.dot(ap,ab)/np.dot(ab,ab) * ab
 			return result
-	
+
 		def angle(v1, v2):
 			return np.arccos(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)))
 
 		for pos, r in enumerate(self.res[1:-1]):
 			realpos=pos+1
-			
+
 			isFirstLayer = realpos==1
 			isLastLayer = realpos==len(self.res)-2
-			
-			# parallel 
+
+			# parallel
 			if not self.ap:
 				if isFirstLayer:
 					O_next = self.res[realpos+1].O.get_array()
@@ -158,8 +151,8 @@ class chainClass():
 				else:
 					O_next = self.res[realpos-1].O.get_array()
 					C_next = self.res[realpos-1].C.get_array()
-					
-			# anti-parallel 
+
+			# anti-parallel
 			else:
 				if isLastLayer:
 					O_next = self.res[realpos-1].O.get_array()
@@ -171,11 +164,11 @@ class chainClass():
 			O = r.O.get_array()
 			Ca = r.Ca.get_array()
 			C = r.C.get_array()
-			
+
 			# Project Ca onto the helix axis (O_new)
 			O_new = ClosestPointOnLine(O, O_next, Ca)
 
-			# Define a plane perpendicular to the helix axis 
+			# Define a plane perpendicular to the helix axis
 			# and find intersection between this plane and the bundle axis (C_new)
 			n = O-O_new
 			V0 = O_new
@@ -185,10 +178,10 @@ class chainClass():
 			D = np.dot(n, u)
 			sI = N / D
 			C_new = C+ sI * u
-			
+
 			# Define sign of the Crick angle
 			mixed = np.dot(np.cross(O_next - O_new, Ca - O_new), C_new - O_new)
-			
+
 			if mixed<0:
 				sign=1
 			else:
@@ -200,14 +193,14 @@ class chainClass():
 				if not isLastLayer: sign = sign * -1
 
 			r.crick = np.degrees(angle(Ca-O_new, C_new-O_new)) * sign
-			
+
 		self.res[0].crick=None
-		self.res[-1].crick=None	
-				
+		self.res[-1].crick=None
+
 		crick = [r.crick for r in self.res[1:-1]]
-		self.crick = [None]+crick+[None]			
-			
-			
+		self.crick = [None]+crick+[None]
+
+
 	def old_calc_crick(self, fix_Crick=True):
 
 		"""
@@ -215,7 +208,7 @@ class chainClass():
 		"""
 
 		pass
-		
+
 		"""
 
 		f_problem = []
@@ -268,26 +261,26 @@ class chainClass():
 
 		self.res[0].crick=None
 		self.res[-1].crick=None
-		
+
 		print(f_problem)
 
 		if not fix_Crick: f_problem = []
-		
+
 		#iterate over potentially problematic Crick angles
 		for fp in f_problem:
 
 			expected = []
-			
+
 			# calculate w1 values in the neighbouring residue pairs
 			if fp>2:
 				expected.append(abs(diffangle(self.res[fp-1].crick, self.res[fp-2].crick)))
 			if fp<len(self.res)-3:
 				expected.append(abs(diffangle(self.res[fp+1].crick, self.res[fp+2].crick)))
-				
+
 			if len(expected)==0: continue
-				
+
 			expected = np.mean(expected)
-			
+
 			current = []
 			alternative = []
 
@@ -304,12 +297,11 @@ class chainClass():
 
 		crick = [r.crick for r in self.res[1:-1]]
 		self.crick = [None]+crick+[None]
-		
+
 		"""
 
 	def calc_pitch_angle(self):
-
-		#FIXME add docs
+		"""Calculate pitch angle"""
 
 		for pos in range(len(self.res)-2):
 			realpos=pos+1
@@ -353,8 +345,6 @@ class chainClass():
 
 		hpos = hpos[:len(self.res)-2]
 
-		#print("".join(hpos)) # debug
-
 		# add missing positions at N end
 		fpos=0
 		try:
@@ -366,8 +356,6 @@ class chainClass():
 			while not next(hep) == hpos[fpos]: pass
 			fadd = [next(hep) for i in range(fpos)][::-1]
 			hpos = fadd + hpos[fpos:]
-
-		#print("".join(hpos))  # debug
 
 		# add missing positions at C end
 		epos=len(hpos)-1
@@ -381,8 +369,6 @@ class chainClass():
 			eadd = [next(hep) for i in range(len(self.res)-epos-1)]
 			hpos = hpos[:epos+1] + eadd
 
-		#print("".join(hpos))  # debug
-
 		assert len(hpos) == len(self.res)
 
 		# store assigned heptad positions in the object
@@ -393,65 +379,62 @@ class chainClass():
 		# Old approach:
 		#angles = gen_expected_crick_angles(P, REP, optimal_ph1)
 		#self.positions = ['?'] + [crick_to_pos(c, angles)[1] for c in self.crick[1:-1]] + ['?']
-		
-		
-
 
 	def calc_crickdev(self, P, REP, optimal_ph1=19.5, smooth=False):
-	
+
 		angles = gen_expected_crick_angles(P, REP, optimal_ph1)
 		posnames = [chr(97+i) for i in range(len(angles))]
 
 		g = deque(zip(angles, posnames))
-		
+
 		best_fit=1000000
 
 		for i in range(len(g)):
 			unpack_g = np.asarray(list(g))
-					
+
 			heptad_cycle = itertools.cycle(unpack_g[:,0].astype(float))
-			
+
 			measured_circk = [r.crick for r in self.res[1:-1]]
 			exp_crick = [next(heptad_cycle) for _ in range(len(measured_circk))]
-			
+
 			if self.ap:
 				exp_crick = exp_crick[::-1]
-			
+
 			crdev = calc_crick_ang_dev(measured_circk, exp_crick, 0, len(self.res)-2, force_start_Cr_ang_pos=0)[0]
-			
+
 			fit = np.mean([abs(i) for i in crdev])
-			
+
 			if fit < best_fit:
-				best_crdev = crdev		
+				best_crdev = crdev
 				posname_cycle = itertools.cycle(unpack_g[:,1].astype(str))
 				best_posnames = [next(posname_cycle) for _ in range(len(best_crdev)+1)]
-				
+
 				first_name = ord(best_posnames[0])-1
 				if first_name<97:
 					assert first_name==96
 					first_name = posnames[-1]
 				else:
 					first_name = chr(first_name)
-					
+
 				best_posnames = [first_name] + best_posnames
-				
+
 				if self.ap:
 					best_posnames = best_posnames[::-1]
 				best_fit = fit
-			
+
 			g.rotate(1)
-			
+
 		if smooth:
 			self.crdev = [None]+list(savitzky_golay(best_crdev,5,1))+[None]
 		else:
 			self.crdev = [None]+best_crdev+[None]
-			
+
 		self.positions_samcc = best_posnames
 
 		for pos, i in enumerate(self.crdev):
 			self.res[pos].crdev = i
-			
-		
+
+
 
 	def calc_crickdev_old(self, P, REP, optimal_ph1=19.5, smooth=False):
 		"""
@@ -463,29 +446,29 @@ class chainClass():
 		"""
 
 		angles = gen_expected_crick_angles(P, REP, optimal_ph1)
-		
+
 		# No starting heptad for index=0 (no data!) was defined. Define it based on the Crick angle
 		if self.heptad == 'x':
-		
+
 			ref_crick = self.res[1].crick
 			ref_crick_pos = 1
-			
+
 			if abs(ref_crick)>=165:
 				#print(ref_crick, self.res[2].crick)
 				ref_crick = self.res[2].crick
-				ref_crick_pos = 2				
-		
+				ref_crick_pos = 2
+
 			start_Cr_ang_pos, name, _ = crick_to_pos(ref_crick, angles)
 			if not self.ap:
 				hpos = start_Cr_ang_pos-ref_crick_pos
 			else:
 				hpos = start_Cr_ang_pos+ref_crick_pos
-				
+
 			if hpos<0: hpos=REP+hpos  # was -1 -> +hpos
 			if hpos>=REP: hpos=hpos-REP   # was == -> >=  ; 0 -> hpos-REP
 		else:
 			hpos = ord(self.heptad)-97
-		
+
 		# Define heptad positions for all residues
 		heptads = ""
 		h = hpos
@@ -497,7 +480,7 @@ class chainClass():
 			else:
 				h+=1
 				if h==REP: h = 0
-		
+
 		self.heptads = list(heptads)
 
 		hep2angle = dict([(chr(l+97), a) for l,a in enumerate(angles)])
@@ -513,13 +496,13 @@ class chainClass():
 			hpos = 0
 
 		heptad = chr(hpos+97)
-		
+
 		exp_ahelix_crick = gen_expected_crick_angles(P, REP, hep2angle[heptad], ap=self.ap)
-		
+
 		crdev = calc_crick_ang_dev([r.crick for r in self.res[1:-1]], exp_ahelix_crick, 0, len(self.res)-2,\
 										   force_start_Cr_ang_pos=0)[0]
-										   
-		
+
+
 		if smooth:
 			self.crdev = [None]+list(savitzky_golay(crdev,5,1))+[None]
 		else:
@@ -529,13 +512,9 @@ class chainClass():
 			self.res[pos].crdev = i
 
 	def calc_axialshift(self):
-
-		#FIXME translate pl->eng in docs, consider more meaningful variable names
-
-		"""
-			C = prevnewC - newC # os CC (nowo wyliczone wartosci z helis, ktorych osie sa przesuniete)
-        	O = positions[pos]['alphaaxis'][chainnr] - newC # nowa os helisy
-        	Omove = vector_to_axis(C, O) - O
+		"""C = prevnewC - newC # os CC (nowo wyliczone wartosci z helis, ktorych osie sa przesuniete)
+        O = positions[pos]['alphaaxis'][chainnr] - newC # nowa os helisy
+        Omove = vector_to_axis(C, O) - O
 		"""
 
 		for pos, r in enumerate(self.res[1:-1]):

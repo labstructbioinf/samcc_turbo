@@ -1,6 +1,5 @@
 class layerClass():
-
-	#FIXME add docs
+	"""Class describing single layer of the bundle"""
 
 	def __init__(self, residues):
 		self.res = residues

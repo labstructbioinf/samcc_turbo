@@ -1,10 +1,9 @@
-""" classes for storing bundle as a collection of helix axis and points on helix axis """
+### classes for storing bundle as a collection of helix axis and points on helix axis ###
 
 import itertools
 import heapq
 import numpy as np
 from scipy.spatial import distance
-#from samcc_turbo.chainClass import chainClass # non-relative
 from .chainClass import chainClass
 
 class NotEqualAxisLen(Exception):
@@ -33,8 +32,9 @@ class helixAxisBundleClass():
 			self.ranks = ranks
 
 	def __getitem__(self, index):
-		# return new helixAxisBundleClass object but truncated
-		# when slicing only points with distance_flag = True are considered
+		"""return new helixAxisBundleClass object but truncated
+		when slicing only points with distance_flag = True are considered
+		"""
 
 		if isinstance(index, slice):
 			helix_axis_sliced = []
@@ -45,9 +45,6 @@ class helixAxisBundleClass():
 			return helixAxisBundleClass(helix_axis_sliced, mode='from_slice', neighbour_interactions=self.neighbour_interactions,
 										ppo=self.ppo, average_dist_angle=self.average_dist_angle, average_layers_dist=self.average_layers_dist,
 										average_dist_to_plane=self.average_dist_to_plane, ranks=self.ranks)
-
-		#FIXME this returns just one helixAxisClass object (= one full chain)
-		#FIXME probably shold return just one layer? this behaviour should be undefined probably
 		else:
 			return self.helix_axis_all[index]
 
@@ -74,7 +71,8 @@ class helixAxisBundleClass():
 		return layers_all
 
 	def get_middle_points(self, slice_size):
-		# for each helix take n/n-1 points from middle of a given helix; n when n is even and n-1 when n is uneven
+		"""for each helix take n/n-1 points from middle of a given helix; n when n is even and n-1 when n is uneven"""
+
 		helix_axis_sliced = []
 		for helix_axis in self.helix_axis_all:
 			# select only point with distance_flag = True and slice according to index
@@ -87,8 +85,8 @@ class helixAxisBundleClass():
 									average_dist_to_plane=self.average_dist_to_plane, ranks=self.ranks)
 
 	def convert_to_coords_list(self):
-		"""Return list of lists[helix axis] of lists[point coords]
-		"""
+		"""Return list of lists[helix axis] of lists[point coords]"""
+
 		helix_axis_convert = []
 		for helix_axis in self.helix_axis_all:
 			helix_axis_convert.append([ [ c for c in p.coords ] for p in helix_axis.axis_points if (p.distance_flag and p.coords != []) ])
@@ -97,8 +95,6 @@ class helixAxisBundleClass():
 
 	def detect_helix_order(self, res_num_layer_detection_asserted):
 
-		#FIXME add/format docstrings, clean from dev code
-
 		def filter_out_diagonals_angles(first_points_on_helix):
 
 			def calc_plane_bis(x, y, z):
@@ -106,8 +102,7 @@ class helixAxisBundleClass():
 				return np.linalg.lstsq(a, np.ones_like(x), rcond=None)[0]
 
 			def project_points(x, y, z, a, b, c):
-				"""
-				Projects the points with coordinates x, y, z onto the plane
+				"""Projects the points with coordinates x, y, z onto the plane
 				defined by a*x + b*y + c*z = 1
 				"""
 				vector_norm = a*a + b*b + c*c
@@ -120,11 +115,6 @@ class helixAxisBundleClass():
 												 normal_vector)
 				proj_onto_plane = (points_from_point_in_plane -
 								   proj_onto_normal_vector[:, None]*normal_vector)
-
-				# print('POINT-IN-PLANE')
-				# print(point_in_plane)
-				# print('PROJ-ONTO-PLANE')
-				# print(proj_onto_plane)
 
 				return point_in_plane + proj_onto_plane
 
@@ -156,7 +146,6 @@ class helixAxisBundleClass():
 					for other_vector in enumerate(points_projected):
 						if other_vector[0] not in helix_order:
 							angles[other_vector[0]] = angle_between(current_helix_vector, other_vector[1])
-					# print('ANGLES', angles)
 					min_angle = min(angles, key=angles.get)
 					helix_order.append(min_angle)
 					current_helix_vector = points_projected[min_angle,:]
@@ -188,28 +177,11 @@ class helixAxisBundleClass():
 			# set center of coordinate system at centroid point
 			points_projected = points_projected[:-1,:] - points_projected[-1,:]
 
-			# print('POINTS PROJECTED CORRECTED TO ORIGIN')
-			# print(points_projected)
-			#
-			# print('CDIST')
 			points_distances    = distance.cdist(points_projected, points_projected)
 			max_points_distance = points_distances[points_distances>0].max() - points_distances[points_distances>0].min()
 
 			helix_order            = determine_helix_order(points_projected)
-			# print('HELIX ORDER')
-			# print(helix_order)
 			neighbour_interactions = make_list_of_neighbour_interactions(helix_order)
-
-			### test plotting - remove once working
-			# import matplotlib.pyplot as plt
-			# from mpl_toolkits.mplot3d import Axes3D
-			#
-			# # plot raw data
-			# plt.figure()
-			# ax = plt.subplot(111, projection='3d')
-			# ax.scatter(points_projected[:,0], points_projected[:,1], points_projected[:,2], color='b')
-			# plt.show()
-			###
 
 			return neighbour_interactions, max_points_distance, ppo
 
@@ -225,25 +197,17 @@ class helixAxisBundleClass():
 			return first_points_on_helix
 
 		def find_closest_first_points_on_helix_to_centroid(centroid, helices_pts_all):
-			''' find a set of points so each point will be on different helix and distance from this point to centroid will be smallest for entire helix '''
+			"""find a set of points so each point will be on different helix and distance
+			from this point to centroid will be smallest for entire helix
+			"""
 
 			first_points_on_helix = []
 			for helix in enumerate(helices_pts_all):
 				dist = distance.cdist([centroid], helix[1])
-				# print(dist[0])
-				# print('CDIST-CENTROID', min(dist[0]), dist[0].argmin())
 				first_points_on_helix.append(helices_pts_all[helix[0]][dist[0].argmin()])
 
 			first_points_on_helix.append(centroid)
 			return first_points_on_helix
-
-		# print('ORDER-DETECT', helices_pts_set)
-		# for h in helices_pts_set:
-		# 	print('h-len', len(h))
-		# 	for i in h:
-		# 		print('a-len', len(i))
-		#
-		# print('HELICES PTS ALL', helices_pts_all)
 
 		middle_pts = self.get_middle_points(res_num_layer_detection_asserted)
 
@@ -252,7 +216,7 @@ class helixAxisBundleClass():
 
 		largest_points_distance     = []
 		neighbour_interactions_list = []
-		ppo = [] # points used to determine helix order, FIXME to better var name
+		ppo = [] # points used to determine helix order
 
 		for helices_pts in helices_pts_set:
 			pts_distances = {} # dict of distances between points on helices axes, key=(h_id1,h_id2)
@@ -267,13 +231,8 @@ class helixAxisBundleClass():
 			# mapping of distance id to record in pts_distances
 			distance_to_pos = { pos:list(pts_distances.keys())[pos] for pos in range(dist_matrices_number)}
 			# select only relations between neighbouring helices - new angle-based method
-			# print('LEN H')
-			# for h in helices_pts:
-			# 	print(len(h))
 
 			first_points_on_helix = [ helix[int(len(helix)/2)] for helix in helices_pts ]
-			#print('FIRST POINT ON HELIX', first_points_on_helix)
-			#first_points_on_helix = [ helix[0] for helix in helices_pts ]
 			first_points_on_helix = calculate_and_add_centroid(first_points_on_helix)
 
 			# find first_points_on_helix from centroid
@@ -281,8 +240,6 @@ class helixAxisBundleClass():
 
 			neighbour_interactions, max_points_distance, ppo = filter_out_diagonals_angles(first_points_on_helix)
 			ppo = first_points_on_helix
-			# print(neighbour_interactions)
-			# print(max_points_distance)
 			largest_points_distance.append(max_points_distance)
 			neighbour_interactions_list.append(neighbour_interactions)
 
@@ -293,25 +250,11 @@ class helixAxisBundleClass():
 		self.ppo = ppo
 
 	def get_all_bundle_boundry_layers(self):
-		"""Only get list of searchLayers - do not evaluate best ones at this point
-		"""
+		"""Only get list of searchLayers - do not evaluate best ones at this point"""
 
 		return [ searchLayer(l, self.neighbour_interactions) for l in itertools.product(*self.helix_axis_all, repeat=1) ]
 
 	def find_bundle_boundry_layer(self, distance_threshold, search_layer_setting_num):
-
-		#FIXME format docstrings, clean from devel code
-		#FIXME docs from previous variant of this function - fix to reflect new code
-
-		''' find bundle layer with minimal distance between helices (i.e. points on their axes) '''
-		''' distance is calculated only between edges, diagonals are not included '''
-		''' input: n=res_num_layer_detection '''
-		''' input: distance_threshold(int): maximal sum of distances in layer that is accepted as properly detected layer '''
-
-		''' output: layer with minimal distance between helices and list of helix interactions cosidered in calculations '''
-		''' output format(first_layer): list of helices, each helix is one 3-element list with coords of point on its axis'''
-		''' output format(neighbour_interactions):  list of 2-element tuples, first element is id of first helix, second element is id of second helix '''
-
 
 		# use searchLayer class to create layer settings and calculate distance between their points
 		layers_all = [ searchLayer(l, self.neighbour_interactions) for l in itertools.product(*self.helix_axis_all, repeat=1) ]
@@ -336,10 +279,6 @@ class helixAxisBundleClass():
 				pt_found   = False
 				for axis_point in helix_axis:
 
-					# chyba bez sensu przycina tylko do distance_flag=True, niech idzie do gory i dolu na caly obszar
-					# to wymaga chyba zmiany API lancuchow tak by podawaly rowniez czesc oflagowana dystansowo
-					# w kazdym razie mozna dolaczyc reszty na koncowkach lancucha (dla nich nie da sie policzyc osi ale bylyby i tak odrzucane przy samcc)
-
 					if axis_point.distance_flag == False:
 						continue
 					if axis_point.point_id == layer_point.point_id:
@@ -352,9 +291,6 @@ class helixAxisBundleClass():
 				helix_data.append([pts_before, pts_after])
 			max_upstream   = min([h[0] for h in helix_data])
 			max_downstream = min([h[1] for h in helix_data])
-
-			# print(helix_data)
-			# print(max_upstream, max_downstream)
 
 			# extract axis points and construct helixAxisBundleClass:
 			helix_axis_sliced = []
@@ -369,9 +305,12 @@ class helixAxisBundleClass():
 		return layer_sets
 
 	def verify_points_distances(self, max_distance=20):
-		# flag axis points that does not meet distance criteria
-		# code verifying if all helix axis points have any axis points from other helix within reasonable distance (20A) [dev-doc]
-		# this code compares all vs all axis points from all helices
+		"""flag axis points that does not meet distance criteria
+		code verifying if all helix axis points have any axis points
+		from other helix within reasonable distance (20A) [dev-doc]
+		this code compares all vs all axis points from all helices
+		"""
+
 		for h1_idx, helix_axis1 in enumerate(self.helix_axis_all):
 			for point1 in helix_axis1.axis_points:
 				# if edge (first or last on helix) flag as False
@@ -387,7 +326,6 @@ class helixAxisBundleClass():
 								if dst < max_distance:
 									# found residue within cutoff distance on this helix, break and search next helix
 									point_stat.append(True)
-									# print(point1, point2, dst)
 									break
 						else:
 							# there is no residue within cutoff distance on this helix, search next one
@@ -414,7 +352,7 @@ class helixAxisBundleClass():
 			print('---'*5)
 
 class helixAxisClass():
-	# class for storing helix axis - composed of helix points
+	"""class for storing helix axis - composed of helix points"""
 
 	def __init__(self, helix_axis, helix_id=None):
 		if isinstance(helix_axis, chainClass):
@@ -438,7 +376,7 @@ class helixAxisClass():
 			return len(self.axis_points)
 
 class axisPoint():
-	# class for storing helix points
+	"""class for storing helix points"""
 
 	def __init__(self, pid, axis_point, residue, helix_id):
 		self.point_id = pid
@@ -459,7 +397,7 @@ class axisPoint():
 			return 'Axis point {0} at [no coords]'.format(self.point_id)
 
 class searchLayer():
-	# class for storing layer data in search for min distance layers
+	"""class for storing layer data in search for min distance layers"""
 
 	def __init__(self, layer_points, neighbour_interactions):
 		self.axis_points    = [ l for l in layer_points ]

@@ -1,14 +1,11 @@
+### Helper functions ###
+
 import networkx as nx
 import itertools
 import numpy as np
 from math import factorial
 
-##################
-# Helper functions
-
 def gen_expected_crick_angles(P, rep_len, start_ph1, ap=False):
-
-	#FIXME add docs
 
 	step = 360 / P
 	if ap:
@@ -19,16 +16,12 @@ def gen_expected_crick_angles(P, rep_len, start_ph1, ap=False):
 
 def adj2(ang):
 
-	#FIXME add docs
-
 	ang = adj(ang)
 	if ang < -180:
 		ang += 360
 	return ang
 
 def adj(ang):
-
-	#FIXME is this function still used? if yes add docs, otherwise delete
 
 	ang += 180.0
 	if ang>360:
@@ -39,8 +32,6 @@ def adj(ang):
 
 def adjustangle(angle):
 
-	#FIXME is this function still used? del or docs
-
 	if abs(angle)>180 and angle > 0:
 		angle = angle - 360.0
 	elif abs(angle)>180 and angle < 0:
@@ -49,15 +40,11 @@ def adjustangle(angle):
 
 def diffangle(targetA, sourceA):
 
-	#FIXME add docs, consider more meaningful variable names
-
 	a = targetA - sourceA
 	a = (a + 180) % 360 - 180
 	return a
 
 def crick_to_pos(start_Cr_ang, exp_helix_crick):
-
-	#FIXME add docs
 
 	diff = [abs(adj(start_Cr_ang-i)) for i in exp_helix_crick]
 	mindiff = min(diff)
@@ -72,8 +59,6 @@ def crick_to_pos(start_Cr_ang, exp_helix_crick):
 	return start_Cr_ang_pos, name, mindiff
 
 def calc_crick_ang_dev(twister, exp_helix_crick, firstpos, lastpos, force_start_Cr_ang_pos=None):
-
-	#FIXME add docs, consider more meaningful variable names
 
 	if firstpos == lastpos:
 		assert lastpos == None
@@ -110,11 +95,10 @@ def calc_crick_ang_dev(twister, exp_helix_crick, firstpos, lastpos, force_start_
 	return Cr_ang_dev, m, b
 
 def window(seq, n=2):
+	"""Returns a sliding window (of width n) over data from the iterable
+	s -> (s0,s1,...s[n-1]), (s1,s2,...,sn), ...
+	"""
 
-	###FIXME is this function still used? del or docs
-
-	"Returns a sliding window (of width n) over data from the iterable"
-	"   s -> (s0,s1,...s[n-1]), (s1,s2,...,sn), ...                   "
 	it = iter(seq)
 	result = tuple(itertools.islice(it, n))
 	if len(result) == n:
@@ -124,7 +108,6 @@ def window(seq, n=2):
 		yield result
 
 def savitzky_golay(y, window_size, order, deriv=0, rate=1):
-
 	"""Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
 	The Savitzky-Golay filter removes high frequency noise from data.
 	It has the advantage of preserving the original shape and
@@ -168,25 +151,23 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
 	y = np.concatenate((firstvals, y, lastvals))
 	return np.convolve( m[::-1], y, mode='valid')
 
-
-#########################
 # SOCKET helper functions
 
 def detect_helices_orientation(indices, orientation_data):
 
 	"""
 	Arguments
-	
+
 	indices: dict of bundle helices from Socket
 	orientation_data: relative orientation of the helices from indices
-	
+
 	Returns
-	
+
 	a dict helix_id -> orientation
-	
+
 	this function uses a graph to convert relative orientations between the helices
 	to parallel/anti-parallel labels for each helix
-	
+
 	"""
 
 	G=nx.Graph()

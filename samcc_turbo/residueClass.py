@@ -1,6 +1,5 @@
 class residueClass():
-	
-	#FIXME add docs
+	"""Class describing single residue"""
 
 	def __init__(self, res, chain):
 		self.res = res
