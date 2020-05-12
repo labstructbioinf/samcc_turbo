@@ -4,7 +4,7 @@
 Software for automatic detection and measurement of coiled coils in PDB structures.
 
 ### Requirements
-1. [DSSP](https://github.com/cmbi/dssp/releases) 
+1. [DSSP 2.3.0](https://github.com/cmbi/dssp/releases) 
 2. [Socket](http://coiledcoils.chm.bris.ac.uk/socket/)
 3. Python 3.7.x (recommended 3.7.7)
 4. Python dependencies as stated in requirements file
