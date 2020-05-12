@@ -8,7 +8,7 @@ Software for automatic detection and measurement of coiled coils in PDB structur
 2. [Socket](http://coiledcoils.chm.bris.ac.uk/socket/)
 3. Python 3.7.x (recommended 3.7.7)
 4. Python dependencies as stated in requirements file
-5. (optional) Pymol
+5. (optional) Pymol. For installation instructions see <https://pymolwiki.org/index.php/Linux_Install>
 
 ### Installation
 1. Download and install DSSP and Socket (links above). Important: SamCC-Turbo does not work with DSSP versions 3.x (format incompatibility issues between DSSP and Socket). We recommend DSSP version 2.3.0
