@@ -40,6 +40,16 @@ pip install -r requirements.txt
 python -m ipykernel install --name=samcc_turbo --user
 ``` 
 
+### Do you prefer a Web server?
+Please visit <https://lbs.cent.uw.edu.pl/ccdb> and <https://lbs.cent.uw.edu.pl/samcc_turbo>
+
+### Interested in coiled coils?
+Please check our papers:
+* [DeepCoil-a fast and accurate prediction of coiled-coil domains in protein sequences.](https://www.ncbi.nlm.nih.gov/pubmed/30601942)
+* [Variability of the core geometry in parallel coiled-coil bundles.](https://www.ncbi.nlm.nih.gov/pubmed/30042011)
+* [The Structure and Topology of α-Helical Coiled Coils.](https://www.ncbi.nlm.nih.gov/pubmed/28101860)
+* [Designability landscape reveals sequence features that define axial helix rotation in four-helical homo-oligomeric antiparallel coiled-coil structures.](https://www.ncbi.nlm.nih.gov/pubmed/25278129)
+
 ### Questions?
 If you encounter any problems with the installation or running SamCC-Turbo, please do not hesitate to contact us at <k.szczepaniak@cent.uw.edu.pl>
 
