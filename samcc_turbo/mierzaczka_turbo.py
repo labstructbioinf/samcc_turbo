@@ -2,14 +2,15 @@
 DEBUG=False
 
 import pickle
-import sys
+import sys, os
+import pathlib
 from .wrappers import run_dssp
 from .wrappers import run_socket
 from .socket_parser import parse_socket_output
 from .socketClass import socket_class
 from .bundleClass import bundleClass
 
-def run_samcc_turbo(pdbpath, mode='auto-detect', defdata=None,
+def run_samcc_turbo(pdbpath, outpath, mode='auto-detect', defdata=None,
 					plot=True, save_df=True, save_pse=True,
 					bin_paths={'dssp':'dssp', 'socket':'socket'},
 					layer_detect_n=5, max_dist='auto', search_set_n=9):
@@ -17,6 +18,7 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', defdata=None,
 
 	Arguments (general):
 	pdbpath   -- path to pdb file (.pdb)
+	outpath   -- path where the output files will be stored
 	mode      -- mode of running SamCC (default 'auto-detect')
 	           - auto-detect: automatic detection of layers in the bundle (requires
 	                          installed dssp and Socket)
@@ -45,15 +47,20 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', defdata=None,
 	defdata   -- list of parameters defining layer setting (default None)
 	"""
 
-	# get pdbid
-	pdbid = pdbpath.split('/')[-1].split('.')[0]
+	assert os.path.isdir(outpath), f'"{outpath}" should be a valid directory'
+	if outpath[-1]!='/':outpath+='/'
+
+	pdbid = pathlib.Path(pdbpath).stem
 
 	if mode == 'auto-detect':
 		# run dssp and socket ('auto-detect' mode)
 		dssppath       = run_dssp(pdbpath, bin_paths['dssp'])
-		socketpath     = run_socket(pdbpath, dssppath, bin_paths['socket'])
+		socketpath     = run_socket(pdbpath, dssppath, bin_paths['socket'])		
 		socket_data    = parse_socket_output(socketpath)
 		s 			   = socket_class(socket_data, pdbpath)
+
+		os.remove(dssppath)
+		os.remove(socketpath)
 
 		bundles = s.get_bundles(res_num_layer_detection=layer_detect_n,
 								distance_threshold=max_dist,
@@ -65,17 +72,20 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', defdata=None,
 			bundle.calc_periodicity()
 			bundle.calc_radius()
 			bundle.calc_crick()
+			bundle.assign_positions()
 			bundle.calc_crickdev(3.5, 7, optimal_ph1=19.5)
 			bundle.calc_axialshift()
-			bundle.assign_positions()
+
+			out_file = f'{outpath}{pdbid}_{bid}'
+
 			if plot: # make plot and save it to file
-				bundle.plot(pdbid + '.png', elements=['Periodicity', 'Radius', 'CrickDev', 'Shift'])
+				bundle.plot(out_file + '.png', elements=['Periodicity', 'Radius', 'CrickDev', 'Shift'])
 
 			if save_df: # dump pickle with dataframe of measured values
-				pickle.dump(bundle.gendf(), open(pdbpath.split('/')[-1].split('.')[0] + '_coil_' + str(bid) + '.p', 'wb'))
+				pickle.dump(bundle.gendf(), open(out_file + '.p', 'wb'))
 
 			if save_pse:
-				bundle.pymol_plot_layer(filename=pdbpath ,savepath='/'.join(pdbpath.split('/')[:-1]), suffix='coil_' + str(bid),
+				bundle.pymol_plot_layer(filename=pdbpath, savepath=outpath, suffix=str(bid),
 										pymol_version=2.0, color_selection=True, helix_order=bundle.helix_order, helices_axis=bundle.helices_axis)
 
 	elif mode == 'defdata':
@@ -88,18 +98,20 @@ def run_samcc_turbo(pdbpath, mode='auto-detect', defdata=None,
 		bundle.calc_periodicity()
 		bundle.calc_radius()
 		bundle.calc_crick()
+		bundle.assign_positions()
 		bundle.calc_crickdev(3.5, 7, optimal_ph1=19.5)
 		bundle.calc_axialshift()
-		bundle.assign_positions()
+		
+		out_file = f'{outpath}{pdbid}_0'
 
 		if plot: # make plot and save it to file
-			bundle.plot(pdbid + '.png', elements=['Periodicity', 'Radius', 'CrickDev', 'Shift'])
+			bundle.plot(out_file + '.png', elements=['Periodicity', 'Radius', 'CrickDev', 'Shift'])
 
 		if save_df: # dump pickle with dataframe of measured values
-			pickle.dump(bundle.gendf(), open(pdbpath.split('/')[-1].split('.')[0] + '_coil.p', 'wb'))
+			pickle.dump(bundle.gendf(), open(out_file + '.p', 'wb'))
 
 		if save_pse:
-			bundle.pymol_plot_layer(filename=pdbpath ,savepath='/'.join(pdbpath.split('/')[:-1]), suffix='coil',
+			bundle.pymol_plot_layer(filename=pdbpath, savepath=outpath, suffix='0',
 									pymol_version=2.0, color_selection=True, helix_order=bundle.helix_order, helices_axis=bundle.helices_axis)
 
 	else:
