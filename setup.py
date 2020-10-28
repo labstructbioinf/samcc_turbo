@@ -1,17 +1,17 @@
-with open('requirements.txt') as f:
-      install_reqs = f.read().splitlines()
-
 from distutils.core import setup
+
+install_reqs = ['biopython>=1.76', 'networkx==2.2', 'seaborn>=0.10.0']
+
 setup(
-  name = 'samcc',
-  packages = ['samcc-turbo'],
-  version = '1.0',
+  name = 'samcc-turbo',
+  packages = ['samcc'],
+  version = '0.0.2',
   license='MIT',
   description = 'Software for automatic detection and measurement of coiled coils in PDB structures.',
   author = 'kszczepaniak',
   author_email = 'k.szczepaniak@cent.uw.edu.pl',
   url = 'https://github.com/labstructbioinf/samcc_turbo',
-  download_url = 'https://github.com/user/reponame/archive/v_01.tar.gz',    # I explain this later on
+  download_url = 'https://github.com/labstructbioinf/samcc_turbo/archive/1.0.tar.gz',
   keywords = ['bioinformatics', 'protein structure', 'coiled-coil'],
   install_requires=install_reqs,
   classifiers=[

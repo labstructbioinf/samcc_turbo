@@ -10,3 +10,5 @@ __pycache__
 *.pse
 /*.scd
 SamCC-refactor-dev.ipynb
+dist
+MANIFEST
