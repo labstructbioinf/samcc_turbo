@@ -11,7 +11,7 @@ setup(
   author = 'kszczepaniak',
   author_email = 'k.szczepaniak@cent.uw.edu.pl',
   url = 'https://github.com/labstructbioinf/samcc_turbo',
-  download_url = 'https://github.com/labstructbioinf/samcc_turbo/archive/1.0.tar.gz',
+  download_url = 'https://github.com/labstructbioinf/samcc_turbo/archive/v0.0.2.tar.gz',
   keywords = ['bioinformatics', 'protein structure', 'coiled-coil'],
   install_requires=install_reqs,
   classifiers=[
