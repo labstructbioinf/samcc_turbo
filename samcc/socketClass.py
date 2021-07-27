@@ -146,6 +146,9 @@ class socket_class():
 			except NoResidue:
 				print('No residue error')
 				continue
+				
+			# cc_id is the same for each helix. we take it from the first one
+            cc_id = input_helices[0][5]
 
 			# assign distance_threshold according to oligomerization state
 			default_distance_threshold = {2:30, 3:40, 4:50, 5:60, 6:70, 7:80, 8:90, 9:100}
