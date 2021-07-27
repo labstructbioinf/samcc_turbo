@@ -218,6 +218,7 @@ class socket_class():
 				c.axis = c.axis[cut_start:cut_stop+1]
 
 			bundle = bundleClass()
+			bundle.socket_cc_id = cc_id.replace('cc_', '')
 
 			# check whether all chains are of equal length
 			temp = [len(i.res) for i in chains]
