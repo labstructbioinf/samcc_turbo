@@ -43,7 +43,7 @@ from samcc import SamCC
 help(SamCC)
 ```
 
-3. For advanced example see the <Example.ipynb> notebook!
+3. For advanced example see the Example.ipynb notebook!
 
 ### Do you prefer a Web server?
 Please visit <https://lbs.cent.uw.edu.pl/ccdb> and <https://lbs.cent.uw.edu.pl/samcc_turbo>
