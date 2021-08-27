@@ -43,6 +43,8 @@ from samcc import SamCC
 help(SamCC)
 ```
 
+3. For advanced example see the <Example.ipynb> notebook!
+
 ### Do you prefer a Web server?
 Please visit <https://lbs.cent.uw.edu.pl/ccdb> and <https://lbs.cent.uw.edu.pl/samcc_turbo>
 
@@ -54,4 +56,4 @@ Please check our papers:
 * [Designability landscape reveals sequence features that define axial helix rotation in four-helical homo-oligomeric antiparallel coiled-coil structures.](https://www.ncbi.nlm.nih.gov/pubmed/25278129)
 
 ### Questions?
-If you encounter any problems with the installation or running SamCC-Turbo, please do not hesitate to contact us at <k.szczepaniak@cent.uw.edu.pl>
+If you encounter any problems with the installation or running SamCC-Turbo, please do not hesitate to contact us at <s.dunin-horkawicz@cent.uw.edu.pl>
