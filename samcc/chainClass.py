@@ -380,7 +380,14 @@ class chainClass():
 		#angles = gen_expected_crick_angles(P, REP, optimal_ph1)
 		#self.positions = ['?'] + [crick_to_pos(c, angles)[1] for c in self.crick[1:-1]] + ['?']
 
-	def calc_crickdev(self, P, REP, optimal_ph1=19.5, smooth=False):
+	def calc_crickdev(self, P, REP, optimal_ph1=19.5, smooth=False, force_heptad=False):
+
+
+		def fix_cycle(tmp):
+			tmp = list(tmp)
+			tmp = tmp[1:] + [tmp[0]]
+			tmp = tmp[::-1]
+			return tmp
 
 		angles = gen_expected_crick_angles(P, REP, optimal_ph1)
 		posnames = [chr(97+i) for i in range(len(angles))]
@@ -389,24 +396,46 @@ class chainClass():
 
 		best_fit=1000000
 
-		for i in range(len(g)):
+		# iterate over possible startig positions
+		for _ in range(len(g)):
 			unpack_g = np.asarray(list(g))
 
-			heptad_cycle = itertools.cycle(unpack_g[:,0].astype(float))
+			if force_heptad:
+				if unpack_g[:,1].astype(str)[0]!=self.heptad:
+					g.rotate(1)
+					continue
+			# angles
+			if self.ap:
+				heptad_cycle = itertools.cycle(fix_cycle(unpack_g[:,0].astype(float)))
+			else:
+				heptad_cycle = itertools.cycle(unpack_g[:,0].astype(float))
 
+			# calculate angle deviation
 			measured_circk = [r.crick for r in self.res[1:-1]]
 			exp_crick = [next(heptad_cycle) for _ in range(len(measured_circk))]
-
-			if self.ap:
-				exp_crick = exp_crick[::-1]
-
+			assert len(measured_circk) == len(exp_crick) == len(self.res)-2
+			#if self.ap: exp_crick = [i * -1 for i in exp_crick]
 			crdev = calc_crick_ang_dev(measured_circk, exp_crick, 0, len(self.res)-2, force_start_Cr_ang_pos=0)[0]
-
+			#if self.ap:
+			#	crdev = [i*-1 for i in crdev]
 			fit = np.mean([abs(i) for i in crdev])
+
+			#debug
+			#print(f'---- {self.ap} ----')
+			#print(unpack_g[:,1])
+			#print('obs', measured_circk)
+			#print('\nexp', exp_crick)
+			#print('\ncrdev', crdev)
+			#print('\nfit', fit)
+			#print('--------------------\n\n')
 
 			if fit < best_fit:
 				best_crdev = crdev
-				posname_cycle = itertools.cycle(unpack_g[:,1].astype(str))
+				if self.ap:
+					posname_cycle = itertools.cycle(fix_cycle(unpack_g[:,1].astype(str)))
+				else:
+					posname_cycle = itertools.cycle(unpack_g[:,1].astype(str))
+
 				best_posnames = [next(posname_cycle) for _ in range(len(best_crdev)+1)]
 
 				first_name = ord(best_posnames[0])-1
@@ -418,9 +447,10 @@ class chainClass():
 
 				best_posnames = [first_name] + best_posnames
 
-				if self.ap:
-					best_posnames = best_posnames[::-1]
 				best_fit = fit
+
+			if force_heptad:
+				break
 
 			g.rotate(1)
 

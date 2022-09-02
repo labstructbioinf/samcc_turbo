@@ -61,13 +61,13 @@ class bundleClass():
         for c in self.chains:
             c.calc_crick()
 
-    def calc_crickdev(self, P, REP, optimal_ph1=19.5, smooth=False):
+    def calc_crickdev(self, P, REP, optimal_ph1=19.5, smooth=False, force_heptad=False):
         """Calculates Crick's angle deviations for all chains in a bundle
         P - periodicity (e.g. 3.5 for 7/2)
         REP - repeat length (eg. 7 for 7/2)
         """
         for c in self.chains:
-            c.calc_crickdev(P, REP, optimal_ph1=optimal_ph1, smooth=smooth)
+            c.calc_crickdev(P, REP, optimal_ph1=optimal_ph1, smooth=smooth, force_heptad=force_heptad)
 
     def calc_periodicity(self, smooth=False, helix_p=3.63):
         """Calculates periodicity for all chains in a bundle."""
