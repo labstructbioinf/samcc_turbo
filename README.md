@@ -56,4 +56,4 @@ Please check our papers:
 * [Designability landscape reveals sequence features that define axial helix rotation in four-helical homo-oligomeric antiparallel coiled-coil structures.](https://www.ncbi.nlm.nih.gov/pubmed/25278129)
 
 ### Questions?
-If you encounter any problems with the installation or running SamCC-Turbo, please do not hesitate to contact us at <s.dunin-horkawicz@cent.uw.edu.pl>
+If you encounter any problems with the installation or running SamCC-Turbo, please do not hesitate to contact us at <s.dunin-horkawicz@uw.edu.pl> or <stanislaw.dunin-horkawicz@tuebingen.mpg.de>
